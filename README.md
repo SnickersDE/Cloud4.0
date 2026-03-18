@@ -1,4 +1,4 @@
-# ZEIT DAS SICH WAS DREHT — Hugo Setup
+# FussballGenie.de — Hugo Setup
 
 Bundesliga News Site mit Live-Tabelle, Dark Mode, Liga-Filter und KI-Redakteur.
 
@@ -115,7 +115,7 @@ author: "Max Müller"
 
 ### 1. config.toml anpassen
 ```toml
-baseURL = "https://snickersde.github.io/Zeitdassichwasdreht.de/"
+baseURL = "https://SnickersDE.github.io/Fussballgenie.de/"
 ```
 
 ### 2. GitHub Actions einrichten (automatisches Deployment)
@@ -158,7 +158,7 @@ Repository → Settings → Pages → Branch: `gh-pages`
 
 ### 1. CNAME Datei erstellen
 ```
-echo "zeitdassichwasdreht.de" > static/CNAME
+echo "fussballgenie.de" > static/CNAME
 ```
 (Die CNAME Datei muss in `static/` liegen, damit Hugo sie ins `public/` kopiert)
 
