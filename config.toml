@@ -24,3 +24,11 @@ theme = ""
     name = "Wir"
     url = "/wir/"
     weight = 4
+
+[related]
+  threshold = 10
+  includeNewer = true
+  toLower = true
+  [[related.indices]]
+    name = "title"
+    weight = 100

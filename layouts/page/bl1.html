@@ -26,7 +26,7 @@
   {{ end }}
 
   {{ range ($.Scratch.Get "bl1pages") }}
-        <div class="card">
+        <div class="card" onclick="window.location.href='{{ .RelPermalink }}'">
           <div class="card-img-ph shimmer"></div>
           <div class="card-body">
             <div class="card-cat {{ .Params.cat_class | default "c-bl" }}">

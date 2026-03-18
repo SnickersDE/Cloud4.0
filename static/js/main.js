@@ -55,15 +55,17 @@ function buildTickerLines(matches, badge) {
     const isLive = result && !match.matchIsFinished;
     const isDone = !!match.matchIsFinished;
     const when = match.matchDateTime ? new Date(match.matchDateTime) : null;
+    const dateText = when ? when.toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit' }) : '--.--';
     const timeText = when ? when.toLocaleTimeString('de-DE', { hour:'2-digit', minute:'2-digit' }) : '--:--';
+    const kickoff = `${dateText} ${timeText}`;
 
     if (isDone) {
-      return `${badge} ${t1} ${result} ${t2} — Abpfiff`;
+      return `${badge} ${t1} ${result} ${t2} — Abpfiff (${kickoff})`;
     }
     if (isLive) {
-      return `${badge} ${t1} ${result} ${t2} — Live`;
+      return `${badge} ${t1} ${result} ${t2} — Live (${kickoff})`;
     }
-    return `${badge} ${t1} vs ${t2} — ${timeText}`;
+    return `${badge} ${t1} vs ${t2} — ${kickoff}`;
   });
 }
 

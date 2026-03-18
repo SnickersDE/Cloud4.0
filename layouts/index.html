@@ -58,16 +58,13 @@
          data-league="{{ .Params.liga }}"
          data-title="{{ .Params.liga | lower }} {{ .Title | lower }}">
       <button class="card-share" onclick="copyLink(event)">Link kopieren</button>
-      <div class="card-img-ph shimmer" style="background:{{ .Params.gradient | default "linear-gradient(135deg,#1a1a2e,#16213e)" }};"></div>
+      <div class="card-img-ph shimmer"></div>
       <div class="card-body">
         <div class="card-cat {{ .Params.cat_class | default "c-bl" }}">
           <span class="cdot {{ .Params.cd_class | default "cd-bl" }}"></span>
           {{ .Params.liga }}
         </div>
-        <div class="card-title">
-          {{ .Title | upper }}
-          {{ if .Params.neu }}<span class="badge-new">Neu</span>{{ end }}
-        </div>
+        <div class="card-title"><a href="{{ .RelPermalink }}">{{ .Title | upper }}</a>{{ if .Params.neu }}<span class="badge-new">Neu</span>{{ end }}</div>
         <div class="card-excerpt">{{ .Params.teaser }}</div>
         <div class="card-foot">
           <div class="card-meta">{{ .Date.Format "02.01." }} · {{ .Date.Format "15:04" }}</div>
@@ -129,9 +126,9 @@
     <div class="card-excerpt">Nach drei Niederlagen in Folge droht der Abstieg für den einstigen Erstligisten.</div>
     <div class="card-foot"><div class="card-meta">15. März</div><div class="read-time">3 Min.</div></div>
   </div>
-  <div class="strip-card filterable" data-league="1. Bundesliga" data-title="1. bundesliga statistik scorer rückrunde kane wirtz">
+  <div class="strip-card filterable" data-league="1. Bundesliga" data-title="1. bundesliga statistik scorer rueckrunde kane musiala simons">
     <div class="card-cat c-def"><span class="cdot cd-def"></span>Statistik</div>
-    <div class="card-title">1. Bundesliga: Kane, Wirtz, Undav — Scorer der Rückrunde</div>
+    <div class="card-title"><a href="{{ "artikel/mein-artikel-titel/" | relURL }}">1. Bundesliga: Kane, Musiala, Simons — Scorer der Rückrunde</a></div>
     <div class="card-excerpt">Die Zahlen der 1. Bundesliga Rückrunde 2026 — datenbasiertes Ranking.</div>
     <div class="card-foot"><div class="card-meta">16. März · 11:20</div><div class="read-time">4 Min.</div></div>
   </div>

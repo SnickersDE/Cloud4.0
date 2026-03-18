@@ -41,6 +41,7 @@
           </a>
           <div class="dropdown">
             <a href="{{ "hot/" | relURL }}">Top Stories</a>
+            <a href="{{ "champions-league/" | relURL }}">Champions League</a>
             <a href="{{ (print "hot/" "?rubrik=transfer") | relURL }}">Transfer</a>
             <a href="{{ (print "hot/" "?rubrik=analyse") | relURL }}">Analyse</a>
             <a href="{{ (print "hot/" "?rubrik=meinung") | relURL }}">Meinung</a>
@@ -73,6 +74,11 @@
           </div>
         </div>
         <div class="nav-item">
+          <a class="nav-btn{{ if eq .RelPermalink "/champions-league/" }} active{{ end }}" href="{{ "champions-league/" | relURL }}">
+            CL
+          </a>
+        </div>
+        <div class="nav-item">
           <a class="nav-btn{{ if eq .RelPermalink "/historisches/" }} active{{ end }}" href="{{ "historisches/" | relURL }}">
             Historisches
           </a>
@@ -95,6 +101,7 @@
     <a href="{{ "1-bundesliga/" | relURL }}">1. Bundesliga</a>
     <a href="{{ "2-bundesliga/" | relURL }}">2. Bundesliga</a>
     <a href="{{ "hot/" | relURL }}">Hot</a>
+    <a href="{{ "champions-league/" | relURL }}">Champions League</a>
     <a href="{{ "tabelle/" | relURL }}">Tabelle</a>
     <a href="{{ "historisches/" | relURL }}">Historisches</a>
     <a href="{{ "unterstuetzen/" | relURL }}">Unterstützen</a>

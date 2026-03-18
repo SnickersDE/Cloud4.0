@@ -22,7 +22,7 @@
   </div>
 
   <!-- Artikel Bild Placeholder -->
-  <div class="artikel-img shimmer" style="background:{{ .Params.gradient | default "linear-gradient(135deg,#1a1a2e,#16213e)" }};"></div>
+  <div class="artikel-img shimmer"></div>
 
   <!-- Artikel Body -->
   <div class="artikel-body">
@@ -32,15 +32,42 @@
     <aside class="artikel-sidebar">
       <div class="sidebar-hd"><span>Trending</span></div>
       <div class="sidebar-item"><div class="sidebar-num">01</div><div class="sidebar-title">Bayern – BVB: Die Noten</div><div class="sidebar-tag">1. Bundesliga</div></div>
-      <div class="sidebar-item"><div class="sidebar-num">02</div><div class="sidebar-title">Wirtz: Alle Klubs im Rennen</div><div class="sidebar-tag">Transfer</div></div>
+      <div class="sidebar-item"><div class="sidebar-num">02</div><div class="sidebar-title">Musiala im Fokus: Bayerns Taktgeber</div><div class="sidebar-tag">1. Bundesliga</div></div>
       <div class="sidebar-item"><div class="sidebar-num">03</div><div class="sidebar-title">1. Bundesliga Tabelle</div><div class="sidebar-tag">Tabelle</div></div>
       <div class="sidebar-item"><div class="sidebar-num">04</div><div class="sidebar-title">2. Bundesliga Aufstiegsrennen</div><div class="sidebar-tag">2. Bundesliga</div></div>
     </aside>
   </div>
 
+  {{ $related := .Site.RegularPages.Related . }}
+  {{ $artikels := where $related "Section" "artikel" }}
+  {{ $artikels = where $artikels "RelPermalink" "ne" .RelPermalink }}
+  {{ if lt (len $artikels) 3 }}
+    {{ $fallback := where .Site.RegularPages "Section" "artikel" }}
+    {{ $fallback = where $fallback "RelPermalink" "ne" .RelPermalink }}
+    {{ $artikels = $fallback }}
+  {{ end }}
+  {{ $suggestions := first 3 (shuffle $artikels) }}
+
+  <div class="container"><div class="section-label">Das könnte dich auch interessieren</div></div>
+  <div class="main-grid" style="margin-top:0;">
+    {{ range $suggestions }}
+      <div class="card" onclick="window.location.href='{{ .RelPermalink }}'">
+        <div class="card-img-ph shimmer"></div>
+        <div class="card-body">
+          <div class="card-cat {{ .Params.cat_class | default "c-bl" }}">
+            <span class="cdot {{ .Params.cd_class | default "cd-bl" }}"></span>
+            {{ .Params.liga | default "Bundesliga" }}
+          </div>
+          <div class="card-title">{{ .Title | upper }}</div>
+          <div class="card-excerpt">{{ .Params.teaser }}</div>
+        </div>
+      </div>
+    {{ end }}
+  </div>
+
   <!-- Zurück-Link -->
   <div class="artikel-back">
-    <a href="/">&larr; Zurück zur Startseite</a>
+    <a href="{{ "/" | relURL }}">&larr; Zurück zur Startseite</a>
   </div>
 
 </article>

@@ -149,6 +149,8 @@ nav.scrolled { box-shadow:0 4px 24px rgba(0,0,0,.5); }
 .c-me { color:#7b2d8b; } .cd-me { background:#7b2d8b; }
 .c-def { color:var(--red); } .cd-def { background:var(--red); }
 .card-title { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:20px; line-height:1.15; color:var(--text); text-transform:uppercase; }
+.card-title a { color:inherit; text-decoration:none; }
+.card-title a:hover { color:#fff; }
 .card-excerpt { font-size:13px; color:var(--mid); margin-top:7px; line-height:1.45; }
 .card-foot { display:flex; align-items:center; justify-content:space-between; margin-top:12px; }
 .card-meta { font-family:'Barlow Condensed',sans-serif; font-size:11px; color:#aaa; letter-spacing:.5px; }
