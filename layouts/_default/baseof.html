@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de" data-theme="light">
+<html lang="de">
 <head>
   {{ partial "head.html" . }}
 </head>
@@ -25,6 +25,6 @@
 
 {{ partial "footer.html" . }}
 
-<script src="/js/main.js"></script>
+<script src="{{ "js/main.js" | relURL }}"></script>
 </body>
 </html>

@@ -2,23 +2,124 @@
 
 <div class="hot-hero">
   <div class="hot-left">
-    <div class="hot-label">Story of the Week</div>
-    <div class="hot-title">DER GROSSE<br><em>Wirtz</em><br>POKER</div>
-    <div class="hot-sub">Florian Wirtz steht vor der größten Entscheidung seiner Karriere. Real Madrid, Manchester City und der FC Bayern liefern sich ein Millionen-Bietergefecht — und die Zeit läuft ab.</div>
-    <div class="hot-byline">Von Sebastian Kraft · Heute, 09:00 · 7 Min.</div>
+    <div class="hot-label">Hot Zone</div>
+    <div class="hot-title">TOP 5<br><em>Storys</em><br>MIT REICHWEITE</div>
+    <div class="hot-sub">Die meistdiskutierten Themen des Tages mit starken Zahlen und klarer Kante. Fokus: Bundesliga, Transfers, Drucksituationen und Formeinbrüche.</div>
+    <div class="hot-byline">Redaktion FussballGenie.de · Heute</div>
   </div>
   <div class="hot-right">
-    <div class="hot-side"><div class="hs-num">01 / Hot</div><div class="hs-title">120 Mio. Angebot aus Madrid — Leverkusen schweigt</div><div class="hs-meta">1. Bundesliga Transfer · Heute 08:12</div></div>
-    <div class="hot-side"><div class="hs-num">02 / Hot</div><div class="hs-title">Haaland-Nachfolger: BVB hat drei Namen auf der Liste</div><div class="hs-meta">1. Bundesliga Gerücht · Heute 07:44</div></div>
-    <div class="hot-side"><div class="hs-num">03 / Hot</div><div class="hs-title">2. Bundesliga: HSV-Investor steigt ein — Millionen fließen</div><div class="hs-meta">2. Bundesliga News · Gestern 21:30</div></div>
+    <div class="hot-side"><div class="hs-num">01 / Hot</div><div class="hs-title">Leverkusen verliert die Nerven im Titelrennen</div><div class="hs-meta">1. Bundesliga Analyse · Heute 10:20</div><div class="hot-views">9.870 Views</div></div>
+    <div class="hot-side"><div class="hs-num">02 / Hot</div><div class="hs-title">BVB-Defensive erneut überfordert in der Schlussphase</div><div class="hs-meta">1. Bundesliga Kritik · Heute 09:30</div><div class="hot-views">8.940 Views</div></div>
+    <div class="hot-side"><div class="hs-num">03 / Hot</div><div class="hs-title">HSV punktet, überzeugt aber spielerisch kaum</div><div class="hs-meta">2. Bundesliga Kommentar · Heute 08:55</div><div class="hot-views">8.120 Views</div></div>
+    <div class="hot-side"><div class="hs-num">04 / Hot</div><div class="hs-title">Union taumelt: Pressing ohne Wirkung</div><div class="hs-meta">1. Bundesliga Taktik · Gestern 22:05</div><div class="hot-views">7.660 Views</div></div>
+    <div class="hot-side"><div class="hs-num">05 / Hot</div><div class="hs-title">Schalke verschenkt Führungen im Aufstiegsdruck</div><div class="hs-meta">2. Bundesliga Analyse · Gestern 21:11</div><div class="hot-views">6.980 Views</div></div>
   </div>
 </div>
 
+<div class="container"><div class="section-label">Rubriken · 1. Bundesliga Teams</div></div>
+<div class="rubrik-wrap">
+  <div class="rubrik-title">Mannschaft auswählen</div>
+  <div class="rubrik-grid">
+    <a class="rubrik-link active" href="#" data-team="all">Alle</a>
+    <a class="rubrik-link" href="#" data-team="bayern">Bayern</a>
+    <a class="rubrik-link" href="#" data-team="dortmund">Dortmund</a>
+    <a class="rubrik-link" href="#" data-team="leverkusen">Leverkusen</a>
+    <a class="rubrik-link" href="#" data-team="leipzig">Leipzig</a>
+    <a class="rubrik-link" href="#" data-team="stuttgart">Stuttgart</a>
+    <a class="rubrik-link" href="#" data-team="frankfurt">Frankfurt</a>
+    <a class="rubrik-link" href="#" data-team="freiburg">Freiburg</a>
+    <a class="rubrik-link" href="#" data-team="hoffenheim">Hoffenheim</a>
+    <a class="rubrik-link" href="#" data-team="wolfsburg">Wolfsburg</a>
+    <a class="rubrik-link" href="#" data-team="augsburg">Augsburg</a>
+    <a class="rubrik-link" href="#" data-team="mainz">Mainz</a>
+    <a class="rubrik-link" href="#" data-team="gladbach">Gladbach</a>
+    <a class="rubrik-link" href="#" data-team="werder">Werder</a>
+    <a class="rubrik-link" href="#" data-team="union">Union</a>
+    <a class="rubrik-link" href="#" data-team="bochum">Bochum</a>
+    <a class="rubrik-link" href="#" data-team="heidenheim">Heidenheim</a>
+    <a class="rubrik-link" href="#" data-team="stpauli">St. Pauli</a>
+    <a class="rubrik-link" href="#" data-team="kiel">Kiel</a>
+  </div>
+</div>
+
+<div class="team-article-box">
+  <div class="main-grid" id="teamArticleGrid">
+      {{ range .Site.RegularPages }}
+      {{ if eq .Section "artikel" }}
+        <div class="card hot-team-card" data-title="{{ .Title | lower }}">
+          <div class="card-img-ph shimmer"></div>
+          <div class="card-body">
+            <div class="card-cat {{ .Params.cat_class | default "c-bl" }}">
+              <span class="cdot {{ .Params.cd_class | default "cd-bl" }}"></span>{{ .Params.liga | default "1. Bundesliga" }}
+            </div>
+            <div class="card-title">{{ .Title | upper }}</div>
+            <div class="card-excerpt">{{ .Params.teaser }}</div>
+          </div>
+        </div>
+      {{ end }}
+      {{ end }}
+      <div class="team-article-empty" id="teamArticleEmpty" style="display:none;grid-column:1/-1;">Für diese Rubrik sind aktuell keine Artikel im Titel hinterlegt. Neue Beiträge folgen laufend.</div>
+  </div>
+</div>
+
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+  const links = document.querySelectorAll('.rubrik-link');
+  const cards = document.querySelectorAll('.hot-team-card');
+  const empty = document.getElementById('teamArticleEmpty');
+
+  const teamKeywords = {
+    all: [],
+    bayern: ['bayern', 'münchen', 'kane'],
+    dortmund: ['dortmund', 'bvb'],
+    leverkusen: ['leverkusen', 'wirtz', 'xabi'],
+    leipzig: ['leipzig', 'rb'],
+    stuttgart: ['stuttgart', 'vfb'],
+    frankfurt: ['frankfurt', 'eintracht'],
+    freiburg: ['freiburg', 'scf'],
+    hoffenheim: ['hoffenheim', 'tsg'],
+    wolfsburg: ['wolfsburg', 'vfl'],
+    augsburg: ['augsburg', 'fca'],
+    mainz: ['mainz', 'm05'],
+    gladbach: ['gladbach', 'mönchengladbach'],
+    werder: ['werder', 'bremen'],
+    union: ['union', 'köpenick'],
+    bochum: ['bochum', 'vfl bochum'],
+    heidenheim: ['heidenheim', 'fch'],
+    stpauli: ['st. pauli', 'st pauli'],
+    kiel: ['kiel', 'holstein']
+  };
+
+  function filterTeam(team) {
+    let count = 0;
+    const keys = teamKeywords[team] || [];
+    cards.forEach(card => {
+      const title = card.dataset.title || '';
+      const match = team === 'all' || keys.some(k => title.includes(k));
+      card.style.display = match ? '' : 'none';
+      if (match) count++;
+    });
+    if (empty) empty.style.display = count === 0 ? '' : 'none';
+  }
+
+  links.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      links.forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+      filterTeam(link.dataset.team || 'all');
+    });
+  });
+
+  filterTeam('all');
+});
+</script>
+
 <div class="container"><div class="section-label">Transfer-Radar</div></div>
 <div class="t-grid">
-  <div class="t-card"><div class="t-tag r">Exklusiv</div><div class="card-cat c-tr"><span class="cdot cd-tr"></span>Transfer</div><div class="card-title" style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;text-transform:uppercase;color:var(--text);">Alario zurück in die 1. Bundesliga — Verhandlungen laufen</div><div style="font-size:13.5px;color:var(--mid);line-height:1.5;margin-top:8px;">Der argentinische Stürmer soll Leverkusen verlassen — ein Konkurrent zeigt Interesse.</div><div class="card-foot" style="margin-top:14px;"><div class="card-meta">16. März</div><div class="read-time">3 Min.</div></div></div>
-  <div class="t-card"><div class="t-tag g">Bestätigt</div><div class="card-cat c-bl"><span class="cdot cd-bl"></span>1. Bundesliga</div><div class="card-title" style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;text-transform:uppercase;color:var(--text);">1. Bundesliga: Mittelstädt verlängert bei Stuttgart bis 2028</div><div style="font-size:13.5px;color:var(--mid);line-height:1.5;margin-top:8px;">Der Linksverteidiger bekennt sich klar zum VfB und bleibt in der 1. Bundesliga.</div><div class="card-foot" style="margin-top:14px;"><div class="card-meta">15. März</div><div class="read-time">2 Min.</div></div></div>
-  <div class="t-card"><div class="t-tag">Gerücht</div><div class="card-cat c-2bl"><span class="cdot cd-2bl"></span>2. Bundesliga</div><div class="card-title" style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;text-transform:uppercase;color:var(--text);">2. Bundesliga-Star im Visier der Premier League</div><div style="font-size:13.5px;color:var(--mid);line-height:1.5;margin-top:8px;">Der 22-Jährige rückt nach starken Auftritten ins Visier englischer Scouts.</div><div class="card-foot" style="margin-top:14px;"><div class="card-meta">14. März</div><div class="read-time">2 Min.</div></div></div>
+  <div class="t-card"><div class="t-tag r">Exklusiv</div><div class="card-cat c-tr"><span class="cdot cd-tr"></span>Transfer</div><div class="card-title" style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;text-transform:uppercase;color:var(--text);">Bayern sondiert zwei Innenverteidiger nach Verletzungsserie</div><div style="font-size:13.5px;color:var(--mid);line-height:1.5;margin-top:8px;">Die Verantwortlichen prüfen konkrete Profile. Geschwindigkeit und Aufbauspiel stehen klar im Fokus.</div><div class="card-foot" style="margin-top:14px;"><div class="card-meta">Heute</div><div class="read-time">3 Min.</div></div></div>
+  <div class="t-card"><div class="t-tag g">Bestätigt</div><div class="card-cat c-bl"><span class="cdot cd-bl"></span>1. Bundesliga</div><div class="card-title" style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;text-transform:uppercase;color:var(--text);">Frankfurt verlängert mit Stammspieler vor Saisonfinale</div><div style="font-size:13.5px;color:var(--mid);line-height:1.5;margin-top:8px;">Die Verlängerung gilt als Signal gegen den drohenden Umbruch. Intern wird bereits der nächste Deal vorbereitet.</div><div class="card-foot" style="margin-top:14px;"><div class="card-meta">Gestern</div><div class="read-time">2 Min.</div></div></div>
+  <div class="t-card"><div class="t-tag">Gerücht</div><div class="card-cat c-2bl"><span class="cdot cd-2bl"></span>2. Bundesliga</div><div class="card-title" style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;text-transform:uppercase;color:var(--text);">Schalke prüft Trainerwechsel trotz Punktgewinn</div><div style="font-size:13.5px;color:var(--mid);line-height:1.5;margin-top:8px;">Hinter den Kulissen wächst die Kritik am Spielstil. Die sportliche Leitung hält mehrere Optionen bereit.</div><div class="card-foot" style="margin-top:14px;"><div class="card-meta">Gestern</div><div class="read-time">2 Min.</div></div></div>
 </div>
 
 <div class="container"><div class="section-label">Analysen &amp; Meinungen</div></div>

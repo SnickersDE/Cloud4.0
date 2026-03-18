@@ -1,0 +1,53 @@
+{{ define "main" }}
+
+<div class="hot-hero">
+  <div class="hot-left">
+    <div class="hot-label">Rubrik</div>
+    <div class="hot-title">1.<br><em>Bundesliga</em><br>Artikel</div>
+    <div class="hot-sub">Hier erscheinen alle Beiträge, deren Titel den Fokus auf die 1. Bundesliga trägt.</div>
+  </div>
+  <div class="hot-right">
+    <div class="hot-side"><div class="hs-num">01 / Fokus</div><div class="hs-title">Titel- und Europacup-Rennen im direkten Vergleich</div><div class="hs-meta">Analyse · Datenbasiert</div></div>
+    <div class="hot-side"><div class="hs-num">02 / Form</div><div class="hs-title">Aktuelle Formkurven der Spitzenteams</div><div class="hs-meta">Trend · Spieltag für Spieltag</div></div>
+    <div class="hot-side"><div class="hs-num">03 / Druck</div><div class="hs-title">Abstiegskampf: Wer hält dem Druck stand?</div><div class="hs-meta">Kritik · Fakten</div></div>
+  </div>
+</div>
+
+<div class="container"><div class="section-label">Alle 1. Bundesliga Artikel</div></div>
+<div class="main-grid" id="articleGrid">
+  {{ $.Scratch.Set "bl1pages" (slice) }}
+  {{ range .Site.RegularPages }}
+    {{ if eq .Section "artikel" }}
+      {{ $title := lower .Title }}
+      {{ if or (in $title "1. bundesliga") (in $title "1 bundesliga") }}
+        {{ $.Scratch.Add "bl1pages" (slice .) }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+
+  {{ range ($.Scratch.Get "bl1pages") }}
+        <div class="card">
+          <div class="card-img-ph shimmer"></div>
+          <div class="card-body">
+            <div class="card-cat {{ .Params.cat_class | default "c-bl" }}">
+              <span class="cdot {{ .Params.cd_class | default "cd-bl" }}"></span>
+              {{ .Params.liga | default "1. Bundesliga" }}
+            </div>
+            <div class="card-title">{{ .Title | upper }}</div>
+            <div class="card-excerpt">{{ .Params.teaser }}</div>
+            <div class="card-foot">
+              <div class="card-meta">{{ .Date.Format "02.01.2006" }} · {{ .Date.Format "15:04" }}</div>
+              <div class="read-time">{{ .Params.lesezeit | default "3" }} Min.</div>
+            </div>
+          </div>
+        </div>
+  {{ end }}
+
+  {{ if eq (len ($.Scratch.Get "bl1pages")) 0 }}
+    <div class="team-article-box" style="grid-column:1/-1;">
+      <div class="team-article-empty">Aktuell gibt es noch keine Artikel mit „1. Bundesliga“ im Titel.</div>
+    </div>
+  {{ end }}
+</div>
+
+{{ end }}

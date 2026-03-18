@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════
-   MAIN.JS — ZEIT DAS SICH WAS DREHT
+   MAIN.JS — FussballGenie.de
    Alle interaktiven Funktionen
-═══════════════════════════════════════ */
+════════════════════════════════════════ */
 
 /* ── Datum im Header ── */
 (function() {
@@ -13,6 +13,78 @@
     });
   }
 })();
+
+const LIVE_API = 'https://api.openligadb.de';
+
+window.addEventListener('DOMContentLoaded', () => {
+  loadLiveTicker();
+  setInterval(loadLiveTicker, 60000);
+});
+
+async function loadLiveTicker() {
+  const track = document.getElementById('liveTickerTrack');
+  const label = document.getElementById('tickerLabel');
+  if (!track) return;
+
+  try {
+    const [bl1, bl2] = await Promise.all([
+      fetch(`${LIVE_API}/getmatchdata/bl1`).then(r => r.ok ? r.json() : []),
+      fetch(`${LIVE_API}/getmatchdata/bl2`).then(r => r.ok ? r.json() : [])
+    ]);
+
+    const lines = [
+      ...buildTickerLines(bl1, '1.BL'),
+      ...buildTickerLines(bl2, '2.BL')
+    ].slice(0, 12);
+
+    const safeLines = lines.length ? lines : ['Aktuell keine Live-Spiele verfügbar'];
+    const doubled = [...safeLines, ...safeLines];
+    track.innerHTML = doubled.map(line => `<span>${escapeHtml(line)}</span>`).join('');
+    if (label) label.textContent = 'Live';
+  } catch (error) {
+    track.innerHTML = '<span>Live-Daten derzeit nicht verfügbar</span><span>Live-Daten derzeit nicht verfügbar</span>';
+    if (label) label.textContent = 'Live';
+  }
+}
+
+function buildTickerLines(matches, badge) {
+  return (matches || []).slice(0, 8).map(match => {
+    const t1 = match.team1?.shortName || match.team1?.teamName || 'Team 1';
+    const t2 = match.team2?.shortName || match.team2?.teamName || 'Team 2';
+    const result = getResult(match);
+    const isLive = result && !match.matchIsFinished;
+    const isDone = !!match.matchIsFinished;
+    const when = match.matchDateTime ? new Date(match.matchDateTime) : null;
+    const timeText = when ? when.toLocaleTimeString('de-DE', { hour:'2-digit', minute:'2-digit' }) : '--:--';
+
+    if (isDone) {
+      return `${badge} ${t1} ${result} ${t2} — Abpfiff`;
+    }
+    if (isLive) {
+      return `${badge} ${t1} ${result} ${t2} — Live`;
+    }
+    return `${badge} ${t1} vs ${t2} — ${timeText}`;
+  });
+}
+
+function getResult(match) {
+  const results = match?.matchResults || [];
+  if (!results.length) return '';
+  const finalResult = results.find(r => r.resultTypeID === 2) || results[results.length - 1];
+  const p1 = finalResult?.pointsTeam1;
+  const p2 = finalResult?.pointsTeam2;
+  if (typeof p1 !== 'number' || typeof p2 !== 'number') return '';
+  return `${p1}:${p2}`;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
 
 /* ── LIGA FILTER (nur auf Homepage) ── */
 (function() {
@@ -101,28 +173,6 @@ function onSearchInput(e) {
   const noRes = document.getElementById('noResults');
   if (noRes) noRes.style.display = count === 0 ? 'block' : 'none';
 }
-
-/* ── DARK MODE ── */
-function toggleTheme() {
-  const html = document.documentElement;
-  const btn  = document.getElementById('themeBtn');
-  const isDark = html.dataset.theme === 'dark';
-  html.dataset.theme = isDark ? 'light' : 'dark';
-  if (btn) btn.textContent = isDark ? '🌙 Dark' : '☀️ Hell';
-  localStorage.setItem('zdswt-theme', isDark ? 'light' : 'dark');
-}
-
-// Theme aus localStorage wiederherstellen
-(function() {
-  const saved = localStorage.getItem('zdswt-theme');
-  if (saved) {
-    document.documentElement.dataset.theme = saved;
-    window.addEventListener('DOMContentLoaded', () => {
-      const btn = document.getElementById('themeBtn');
-      if (btn) btn.textContent = saved === 'dark' ? '☀️ Hell' : '🌙 Dark';
-    });
-  }
-})();
 
 /* ── MOBILE MENU ── */
 function toggleMenu() {
