@@ -15,9 +15,11 @@
 })();
 
 const LIVE_API = 'https://api.openligadb.de';
+let searchIndex = [];
 
 window.addEventListener('DOMContentLoaded', () => {
   loadLiveTicker();
+  loadSearchIndex();
   setInterval(loadLiveTicker, 60000);
 });
 
@@ -142,6 +144,7 @@ function clearFilter() {
 /* ── SEARCH ── */
 function toggleSearch() {
   const inp = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
   if (!inp) return;
   inp.classList.toggle('open');
   if (inp.classList.contains('open')) {
@@ -150,13 +153,25 @@ function toggleSearch() {
   } else {
     inp.value = '';
     inp.removeEventListener('input', onSearchInput);
+    if (results) {
+      results.innerHTML = '';
+      results.classList.remove('open');
+    }
     clearFilter();
   }
 }
 
 function onSearchInput(e) {
   const q = e.target.value.toLowerCase().trim();
-  if (!q) { clearFilter(); return; }
+  if (!q) {
+    const results = document.getElementById('searchResults');
+    if (results) {
+      results.innerHTML = '';
+      results.classList.remove('open');
+    }
+    clearFilter();
+    return;
+  }
 
   const items = document.querySelectorAll('.filterable[data-league]');
   let count = 0;
@@ -174,6 +189,52 @@ function onSearchInput(e) {
   }
   const noRes = document.getElementById('noResults');
   if (noRes) noRes.style.display = count === 0 ? 'block' : 'none';
+  renderGlobalSearch(q);
+}
+
+async function loadSearchIndex() {
+  try {
+    const root = window.__SITE_ROOT__ || '/';
+    const res = await fetch(`${root}index.json`);
+    if (!res.ok) return;
+    searchIndex = await res.json();
+  } catch (err) {
+    searchIndex = [];
+  }
+}
+
+function renderGlobalSearch(query) {
+  const box = document.getElementById('searchResults');
+  if (!box) return;
+  if (!searchIndex.length || query.length < 2) {
+    box.innerHTML = '';
+    box.classList.remove('open');
+    return;
+  }
+
+  const terms = query.split(/\s+/).filter(Boolean);
+  const hits = searchIndex
+    .map(item => {
+      const haystack = `${item.title || ''} ${item.teaser || ''} ${(item.tags || []).join(' ')}`.toLowerCase();
+      const score = terms.reduce((acc, t) => acc + (haystack.includes(t) ? 1 : 0), 0);
+      return { item, score };
+    })
+    .filter(entry => entry.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8);
+
+  if (!hits.length) {
+    box.innerHTML = '<div class="search-hit"><div class="search-hit-title">Keine Treffer</div></div>';
+    box.classList.add('open');
+    return;
+  }
+
+  box.innerHTML = hits.map(({ item }) => {
+    const title = escapeHtml(item.title || 'Artikel');
+    const meta = escapeHtml(`${item.liga || ''} · ${new Date(item.date).toLocaleDateString('de-DE')}`);
+    return `<a class="search-hit" href="${item.url}"><div class="search-hit-title">${title}</div><div class="search-hit-meta">${meta}</div></a>`;
+  }).join('');
+  box.classList.add('open');
 }
 
 /* ── MOBILE MENU ── */

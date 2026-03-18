@@ -1,15 +1,21 @@
 ---
-title: "Schon Wieder Fällt Barca In Alte Champions-League-Muster"
-date: 2026-03-14T19:35:00+01:00
+title: "Arsenal Nutzt Leverkusens Schwäche Eiskalt Aus"
+date: 2026-03-17T22:55:00+01:00
 draft: false
 liga: "Champions League"
+slug: "arsenal-leverkusen-20-analyse"
+aliases: ["/artikel/champions-league-barca-illusion/"]
+categories: ["champions-league", "analyse"]
+tags: ["team:arsenal", "team:leverkusen", "spieler:saka", "liga:ucl"]
 cat_class: "c-cl"
 cd_class: "cd-cl"
-teaser: "Barca glänzt in Phasen und bricht dann ein. Das Muster ist bekannt und weiterhin brandgefährlich."
+teaser: "Leverkusen fand gegen Arsenal kaum Lösungen. Die Engländer spielten reif und gnadenlos effizient."
 lesezeit: "2"
 neu: false
 gradient: "linear-gradient(135deg,#1a2337,#101929)"
 author: "Florian Troegel"
 ---
 
-Barca dominiert mit Ball, doch unter Druck fehlt oft die klare Exit-Struktur. Gegner warten genau auf diese Momente und schlagen in Umschaltfenstern brutal zu. Positiv: technische Qualität und mutiger Aufbau. Negativ: zu viele riskante Kurzpässe im falschen Drittel. Die größte Illusion bleibt, dass Ballbesitz automatisch Kontrolle bedeutet. In K.o.-Duellen zählt nicht Schönheit, sondern Fehlerminimierung. Datenstand der letzten 7 Tage.
+Arsenal schlug Leverkusen 2:0 und wirkte in den entscheidenden Szenen deutlich klarer. Leverkusen hatte Ballphasen, aber zu wenig Durchschlagskraft im letzten Drittel. Genau dort entschied Arsenal das Duell mit Timing und sauberer Restverteidigung. Positiv bei Bayer: mutiger Aufbau trotz Druck. Kritisch: zu viele unpräzise letzte Pässe und kaum zweite Bälle im Strafraum. In K.o.-Spielen ist das tödlich.
+
+Quelle (letzte 7 Tage): https://www.theguardian.com/football/live/2026/mar/17/manchester-city-v-real-madrid-champions-league-last-16-second-leg-live

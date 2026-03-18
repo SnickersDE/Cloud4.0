@@ -1,0 +1,27 @@
+{{ define "main" }}
+
+<div class="container"><div class="section-label">{{ .Title }}</div></div>
+{{ $pages := .RegularPages }}
+{{ $paginator := .Paginate $pages }}
+<div class="main-grid">
+  {{ range $paginator.Pages }}
+    <div class="card" onclick="window.location.href='{{ .RelPermalink }}'">
+      <div class="card-img-ph shimmer"></div>
+      <div class="card-body">
+        <div class="card-cat {{ .Params.cat_class | default "c-bl" }}">
+          <span class="cdot {{ .Params.cd_class | default "cd-bl" }}"></span>
+          {{ .Params.liga | default "Bundesliga" }}
+        </div>
+        <div class="card-title">{{ .Title | upper }}</div>
+        <div class="card-excerpt">{{ .Params.teaser | default .Summary }}</div>
+      </div>
+    </div>
+  {{ end }}
+</div>
+
+<div class="container" style="padding-top:18px;padding-bottom:32px;">
+  {{ if $paginator.HasPrev }}<a class="soc-btn" href="{{ $paginator.Prev.URL }}">Neuere</a>{{ end }}
+  {{ if $paginator.HasNext }}<a class="soc-btn" href="{{ $paginator.Next.URL }}">Ältere</a>{{ end }}
+</div>
+
+{{ end }}

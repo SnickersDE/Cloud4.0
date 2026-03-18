@@ -1,0 +1,15 @@
+[
+{{- $pages := where .Site.RegularPages "Section" "artikel" -}}
+{{- range $i, $p := $pages -}}
+{{- if gt $i 0 }},{{ end }}
+{
+  "title": {{ $p.Title | jsonify }},
+  "teaser": {{ ($p.Params.teaser | default "") | jsonify }},
+  "url": {{ $p.RelPermalink | jsonify }},
+  "liga": {{ ($p.Params.liga | default "") | jsonify }},
+  "categories": {{ ($p.Params.categories | default (slice)) | jsonify }},
+  "tags": {{ ($p.Params.tags | default (slice)) | jsonify }},
+  "date": {{ $p.Date.Format "2006-01-02T15:04:05Z07:00" | jsonify }}
+}
+{{- end }}
+]

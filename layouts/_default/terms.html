@@ -1,0 +1,14 @@
+{{ define "main" }}
+
+<div class="container"><div class="section-label">{{ .Title }}</div></div>
+<div class="strip" style="border-top:1px solid var(--border);">
+  {{ range .Data.Terms.Alphabetical }}
+    <div class="strip-card">
+      <div class="card-cat c-def"><span class="cdot cd-def"></span>{{ $.Data.Plural | title }}</div>
+      <div class="card-title"><a href="{{ .Page.RelPermalink }}">{{ .Page.Title | upper }}</a></div>
+      <div class="card-excerpt">{{ .Count }} Artikel</div>
+    </div>
+  {{ end }}
+</div>
+
+{{ end }}

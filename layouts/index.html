@@ -52,7 +52,10 @@
 <div class="container"><div class="section-label">Aktuelle Meldungen</div></div>
 <div class="main-grid" id="articleGrid">
 
-  {{ range .Site.RegularPages }}
+  {{ $articlePages := where .Site.RegularPages "Section" "artikel" }}
+  {{ $articlePages = sort $articlePages "Date" "desc" }}
+  {{ $paginator := .Paginate $articlePages }}
+  {{ range $paginator.Pages }}
     {{ if eq .Section "artikel" }}
     <div class="card filterable"
          onclick="window.location.href='{{ .RelPermalink }}'"
@@ -106,6 +109,11 @@
   </div>
 
 </div><!-- /main-grid -->
+
+<div class="container" style="padding-top:18px;padding-bottom:28px;">
+  {{ if $paginator.HasPrev }}<a class="soc-btn" href="{{ $paginator.Prev.URL }}">Neuere Artikel</a>{{ end }}
+  {{ if $paginator.HasNext }}<a class="soc-btn" href="{{ $paginator.Next.URL }}">Ältere Artikel</a>{{ end }}
+</div>
 
 <!-- Strip -->
 <div class="strip">

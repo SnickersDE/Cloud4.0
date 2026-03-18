@@ -40,9 +40,15 @@ header { background:var(--header-bg); border-bottom:4px solid var(--ink); transi
 .logo { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:64px; color:var(--text); letter-spacing:4px; text-transform:uppercase; text-decoration:none; line-height:.88; display:block; }
 .logo .accent { color:var(--red); }
 .logo .thin { font-weight:400; font-style:italic; letter-spacing:-1px; }
-.header-right { display:flex; align-items:center; gap:14px; }
+.header-right { display:flex; align-items:center; gap:14px; position:relative; }
 .header-meta { font-family:'Barlow Condensed',sans-serif; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--mid); text-align:right; line-height:1.6; }
 .header-meta strong { display:block; color:var(--text); font-size:14px; font-weight:800; }
+.search-results { position:absolute; right:0; top:56px; width:420px; background:#0f0f0f; border:1px solid var(--border); z-index:1100; display:none; max-height:340px; overflow:auto; }
+.search-results.open { display:block; }
+.search-hit { display:block; padding:10px 14px; border-bottom:1px solid #242424; color:#fff; text-decoration:none; }
+.search-hit:last-child { border-bottom:none; }
+.search-hit-title { font-family:'Barlow Condensed',sans-serif; font-weight:800; letter-spacing:.5px; text-transform:uppercase; font-size:14px; }
+.search-hit-meta { font-family:'Barlow Condensed',sans-serif; font-size:11px; letter-spacing:1px; color:var(--mid); margin-top:4px; text-transform:uppercase; }
 
 /* Search */
 .search-wrap { display:flex; align-items:center; border:2px solid var(--border); overflow:hidden; transition:border-color .2s; }

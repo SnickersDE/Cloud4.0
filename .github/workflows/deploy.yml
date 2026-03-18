@@ -31,6 +31,9 @@ jobs:
           hugo-version: 'latest'
           extended: true
 
+      - name: Validate article metadata
+        run: python3 scripts/validate_content.py
+
       - name: Build with Hugo
         run: hugo --minify --gc
 

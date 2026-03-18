@@ -1,7 +1,7 @@
 <header>
   <div class="header-top">
     <div>
-      <a class="logo" href="{{ "/" | relURL }}">
+      <a class="logo" href="{{ "/" | relURL }}" onclick="window.location.href=this.href; return false;">
         FUSSBALLGENIE<span class="accent">.DE</span>
       </a>
     </div>
@@ -10,6 +10,7 @@
         <input class="search-input" id="searchInput" type="text" placeholder="Suche..."/>
         <button class="search-btn" onclick="toggleSearch()">&#128269; Suche</button>
       </div>
+      <div class="search-results" id="searchResults"></div>
       <div class="header-meta">
         <span id="headerDate"></span>
       </div>
@@ -20,62 +21,34 @@
     <div class="nav-inner">
       <div class="nav-left">
 
-        <!-- START -->
         <div class="nav-item">
           <a class="nav-btn{{ if .IsHome }} active{{ end }}" href="{{ "/" | relURL }}">
-            Start <span class="nav-badge">7</span>
+            Start
           </a>
-          <div class="dropdown">
-            <a href="{{ "/" | relURL }}">Alle News</a>
-            <a href="{{ "1-bundesliga/" | relURL }}">1. Bundesliga</a>
-            <a href="{{ "2-bundesliga/" | relURL }}">2. Bundesliga</a>
-            <a href="{{ "historisches/" | relURL }}">Historisches</a>
-            <a href="{{ "unterstuetzen/" | relURL }}">Unterstützen</a>
-          </div>
         </div>
-
-        <!-- HOT -->
         <div class="nav-item">
-          <a class="nav-btn{{ if eq .RelPermalink "/hot/" }} active{{ end }}" href="{{ "hot/" | relURL }}">
-            Hot <span class="nav-badge">3</span>
+          <a class="nav-btn{{ if eq .RelPermalink "/tabelle/" }} active{{ end }}" href="{{ (print "tabelle/" "?liga=bl1") | relURL }}">
+            Tabelle 1. Bundesliga
           </a>
-          <div class="dropdown">
-            <a href="{{ "hot/" | relURL }}">Top Stories</a>
-            <a href="{{ "champions-league/" | relURL }}">Champions League</a>
-            <a href="{{ (print "hot/" "?rubrik=transfer") | relURL }}">Transfer</a>
-            <a href="{{ (print "hot/" "?rubrik=analyse") | relURL }}">Analyse</a>
-            <a href="{{ (print "hot/" "?rubrik=meinung") | relURL }}">Meinung</a>
-            <a href="{{ "1-bundesliga/" | relURL }}">1. Bundesliga</a>
-            <a href="{{ "2-bundesliga/" | relURL }}">2. Bundesliga</a>
-          </div>
         </div>
-
-        <!-- TABELLE -->
         <div class="nav-item">
-          <a class="nav-btn{{ if eq .RelPermalink "/tabelle/" }} active{{ end }}" href="{{ "tabelle/" | relURL }}">
-            Tabelle
+          <a class="nav-btn{{ if eq .RelPermalink "/tabelle/" }} active{{ end }}" href="{{ (print "tabelle/" "?liga=bl2") | relURL }}">
+            Tabelle 2. Bundesliga
           </a>
-          <div class="dropdown">
-            <a href="{{ (print "tabelle/" "?liga=bl1") | relURL }}">1. Bundesliga <span class="liga-pill">1.BL</span></a>
-            <a href="{{ (print "tabelle/" "?liga=bl2") | relURL }}">2. Bundesliga <span class="liga-pill">2.BL</span></a>
-          </div>
-        </div>
-
-        <!-- WIR -->
-        <div class="nav-item">
-          <a class="nav-btn{{ if eq .RelPermalink "/wir/" }} active{{ end }}" href="{{ "wir/" | relURL }}">
-            Wir
-          </a>
-          <div class="dropdown">
-            <a href="{{ "wir/" | relURL }}">Über uns</a>
-            <a href="{{ "wir/redaktion/" | relURL }}">Redaktion</a>
-            <a href="{{ "wir/kontakt/" | relURL }}">Kontakt</a>
-            <a href="{{ "wir/newsletter/" | relURL }}">Newsletter</a>
-          </div>
         </div>
         <div class="nav-item">
           <a class="nav-btn{{ if eq .RelPermalink "/champions-league/" }} active{{ end }}" href="{{ "champions-league/" | relURL }}">
-            CL
+            Champions League
+          </a>
+        </div>
+        <div class="nav-item">
+          <a class="nav-btn{{ if eq .RelPermalink "/1-bundesliga/" }} active{{ end }}" href="{{ "1-bundesliga/" | relURL }}">
+            1. Bundesliga
+          </a>
+        </div>
+        <div class="nav-item">
+          <a class="nav-btn{{ if eq .RelPermalink "/2-bundesliga/" }} active{{ end }}" href="{{ "2-bundesliga/" | relURL }}">
+            2. Bundesliga
           </a>
         </div>
         <div class="nav-item">
@@ -88,6 +61,11 @@
             Unterstützen
           </a>
         </div>
+        <div class="nav-item">
+          <a class="nav-btn{{ if eq .RelPermalink "/wir/" }} active{{ end }}" href="{{ "wir/" | relURL }}">
+            Wir
+          </a>
+        </div>
 
       </div>
       <button class="hamburger" id="hamburger" onclick="toggleMenu()">
@@ -98,11 +76,11 @@
 
   <div class="mobile-menu" id="mobileMenu">
     <a href="{{ "/" | relURL }}">Start</a>
+    <a href="{{ (print "tabelle/" "?liga=bl1") | relURL }}">Tabelle 1. Bundesliga</a>
+    <a href="{{ (print "tabelle/" "?liga=bl2") | relURL }}">Tabelle 2. Bundesliga</a>
+    <a href="{{ "champions-league/" | relURL }}">Champions League</a>
     <a href="{{ "1-bundesliga/" | relURL }}">1. Bundesliga</a>
     <a href="{{ "2-bundesliga/" | relURL }}">2. Bundesliga</a>
-    <a href="{{ "hot/" | relURL }}">Hot</a>
-    <a href="{{ "champions-league/" | relURL }}">Champions League</a>
-    <a href="{{ "tabelle/" | relURL }}">Tabelle</a>
     <a href="{{ "historisches/" | relURL }}">Historisches</a>
     <a href="{{ "unterstuetzen/" | relURL }}">Unterstützen</a>
     <a href="{{ "wir/" | relURL }}">Wir</a>

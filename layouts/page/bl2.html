@@ -18,8 +18,8 @@
   {{ $.Scratch.Set "bl2pages" (slice) }}
   {{ range .Site.RegularPages }}
     {{ if eq .Section "artikel" }}
-      {{ $title := lower .Title }}
-      {{ if or (in $title "2. bundesliga") (in $title "2 bundesliga") }}
+      {{ $cats := .Params.categories | default (slice) }}
+      {{ if in $cats "2-bundesliga" }}
         {{ $.Scratch.Add "bl2pages" (slice .) }}
       {{ end }}
     {{ end }}

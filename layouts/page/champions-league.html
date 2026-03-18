@@ -18,8 +18,8 @@
   {{ $.Scratch.Set "clpages" (slice) }}
   {{ range .Site.RegularPages }}
     {{ if eq .Section "artikel" }}
-      {{ $liga := lower (.Params.liga | default "") }}
-      {{ if in $liga "champions league" }}
+      {{ $cats := .Params.categories | default (slice) }}
+      {{ if in $cats "champions-league" }}
         {{ $.Scratch.Add "clpages" (slice .) }}
       {{ end }}
     {{ end }}

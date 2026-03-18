@@ -2,28 +2,21 @@ baseURL = "https://SnickersDE.github.io/Fussballgenie.de/"
 languageCode = "de-DE"
 title = "FussballGenie.de"
 theme = ""
+paginate = 12
 
 [params]
   description = "Die schnellsten Bundesliga News — 1. & 2. Bundesliga"
   author = "Redaktion ZDSWD"
 
-[menu]
-  [[menu.main]]
-    name = "Start"
-    url = "/"
-    weight = 1
-  [[menu.main]]
-    name = "Hot"
-    url = "/hot/"
-    weight = 2
-  [[menu.main]]
-    name = "Tabelle"
-    url = "/tabelle/"
-    weight = 3
-  [[menu.main]]
-    name = "Wir"
-    url = "/wir/"
-    weight = 4
+[taxonomies]
+  category = "categories"
+  tag = "tags"
+
+[permalinks]
+  artikel = "/artikel/:slug/"
+
+[outputs]
+  home = ["HTML", "RSS", "JSON"]
 
 [related]
   threshold = 10
