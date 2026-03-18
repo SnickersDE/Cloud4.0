@@ -1,0 +1,146 @@
+{{ define "main" }}
+
+<!-- ══════════════════════════════════════
+     HERO
+══════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-main filterable" data-league="1. Bundesliga" data-title="1. bundesliga kane schiesst münchen zum sieg im klassiker">
+    <div class="hero-badge">Breaking</div>
+    <div class="hero-pic shimmer">
+      <svg style="position:absolute;bottom:0;left:0;width:100%;height:100%;opacity:.07;" viewBox="0 0 900 540" preserveAspectRatio="none">
+        <rect x="50" y="40" width="800" height="460" fill="none" stroke="white" stroke-width="3"/>
+        <circle cx="450" cy="270" r="75" fill="none" stroke="white" stroke-width="3"/>
+        <line x1="450" y1="40" x2="450" y2="500" stroke="white" stroke-width="2"/>
+        <rect x="50" y="193" width="110" height="154" fill="none" stroke="white" stroke-width="2"/>
+        <rect x="740" y="193" width="110" height="154" fill="none" stroke="white" stroke-width="2"/>
+      </svg>
+    </div>
+    <div class="hero-content">
+      <div class="hero-category">1. Bundesliga · 26. Spieltag</div>
+      <div class="hero-title">KANE SCHIESST MÜNCHEN<br>ZUM SIEG IM KLASSIKER</div>
+      <div class="hero-sub">Zweimal Harry Kane — der FC Bayern dreht das Spitzenspiel gegen BVB in der zweiten Hälfte und bleibt Tabellenführer der 1. Bundesliga.</div>
+      <div class="hero-meta">Von Max Müller · Heute, 20:41 Uhr · 4 Min.</div>
+    </div>
+  </div>
+  <div class="hero-sidebar">
+    <div class="hero-side-item filterable" data-league="1. Bundesliga" data-title="1. bundesliga xabi alonso verlängert">
+      <div class="side-thumb-ph shimmer" style="background:linear-gradient(135deg,#1a1a1a,#2a2a2a);"></div>
+      <div><div class="side-cat">1. Bundesliga</div><div class="side-title">Xabi Alonso verlängert bis 2028 — offiziell!</div><div class="side-date">Heute · 18:15 · 2 Min.</div></div>
+    </div>
+    <div class="hero-side-item filterable" data-league="1. Bundesliga" data-title="1. bundesliga wirtz entscheidung april">
+      <div class="side-thumb-ph shimmer" style="background:linear-gradient(135deg,#1a2a1a,#0a1a0a);"></div>
+      <div><div class="side-cat">1. Bundesliga Transfer</div><div class="side-title">1. Bundesliga: Wirtz-Entscheidung bis Ende April</div><div class="side-date">Heute · 16:02 · 3 Min.</div></div>
+    </div>
+    <div class="hero-side-item filterable" data-league="1. Bundesliga" data-title="1. bundesliga frankfurt halbfinale pokal">
+      <div class="side-thumb-ph shimmer" style="background:linear-gradient(135deg,#2a1a1a,#1a0a0a);"></div>
+      <div><div class="side-cat">1. Bundesliga Pokal</div><div class="side-title">1. Bundesliga: Frankfurt im Halbfinale dramatisch</div><div class="side-date">Gestern · 22:55 · 3 Min.</div></div>
+    </div>
+    <div class="hero-side-item filterable" data-league="2. Bundesliga" data-title="2. bundesliga hamburger sv tabellenführer">
+      <div class="side-thumb-ph shimmer" style="background:linear-gradient(135deg,#1a1a2a,#0a0a1a);"></div>
+      <div><div class="side-cat">2. Bundesliga</div><div class="side-title">2. Bundesliga: HSV wieder Tabellenführer</div><div class="side-date">Gestern · 20:30 · 2 Min.</div></div>
+    </div>
+    <div class="hero-side-item filterable" data-league="2. Bundesliga" data-title="2. bundesliga kiel gewinnt aufstiegsrennen">
+      <div class="side-thumb-ph shimmer" style="background:linear-gradient(135deg,#1a2a2a,#0a1a1a);"></div>
+      <div><div class="side-cat">2. Bundesliga</div><div class="side-title">2. Bundesliga: Kiel gewinnt — Aufstiegsrennen heißer denn je</div><div class="side-date">16. März · 18:30 · 2 Min.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     NEWS GRID
+══════════════════════════════════════ -->
+<div class="container"><div class="section-label">Aktuelle Meldungen</div></div>
+<div class="main-grid" id="articleGrid">
+
+  {{ range .Site.RegularPages }}
+    {{ if eq .Section "artikel" }}
+    <div class="card filterable"
+         data-league="{{ .Params.liga }}"
+         data-title="{{ .Params.liga | lower }} {{ .Title | lower }}">
+      <button class="card-share" onclick="copyLink(event)">Link kopieren</button>
+      <div class="card-img-ph shimmer" style="background:{{ .Params.gradient | default "linear-gradient(135deg,#1a1a2e,#16213e)" }};"></div>
+      <div class="card-body">
+        <div class="card-cat {{ .Params.cat_class | default "c-bl" }}">
+          <span class="cdot {{ .Params.cd_class | default "cd-bl" }}"></span>
+          {{ .Params.liga }}
+        </div>
+        <div class="card-title">
+          {{ .Title | upper }}
+          {{ if .Params.neu }}<span class="badge-new">Neu</span>{{ end }}
+        </div>
+        <div class="card-excerpt">{{ .Params.teaser }}</div>
+        <div class="card-foot">
+          <div class="card-meta">{{ .Date.Format "02.01." }} · {{ .Date.Format "15:04" }}</div>
+          <div class="read-time">{{ .Params.lesezeit | default "3" }} Min.</div>
+        </div>
+      </div>
+    </div>
+    {{ end }}
+  {{ end }}
+
+  <!-- KI-Artikel Marker für den Python-Redakteur -->
+  <!-- ##KI-ARTIKEL-START## -->
+  <!-- ##KI-ARTIKEL-END## -->
+
+  <!-- Trending Sidebar -->
+  <div class="sidebar-stack">
+    <div class="sidebar-hd">
+      <span>Trending</span>
+      <span style="font-size:9px;color:#555;letter-spacing:2px;">LIVE</span>
+    </div>
+    <div class="sidebar-item"><div class="sidebar-num">01</div><div class="sidebar-title">Bayern – BVB: Die Noten</div><div class="sidebar-tag">1. Bundesliga</div><div class="trend-count"><span>12.4k</span><div class="trend-bar" style="width:88px;"></div></div></div>
+    <div class="sidebar-item"><div class="sidebar-num">02</div><div class="sidebar-title">Wirtz: Alle Klubs im Rennen</div><div class="sidebar-tag">Transfer</div><div class="trend-count"><span>9.8k</span><div class="trend-bar" style="width:72px;"></div></div></div>
+    <div class="sidebar-item"><div class="sidebar-num">03</div><div class="sidebar-title">1. Bundesliga Tabelle — 26. Spieltag</div><div class="sidebar-tag">Tabelle</div><div class="trend-count"><span>7.2k</span><div class="trend-bar" style="width:56px;"></div></div></div>
+    <div class="sidebar-item"><div class="sidebar-num">04</div><div class="sidebar-title">2. Bundesliga Tabelle — Aufstieg</div><div class="sidebar-tag">2. Bundesliga</div><div class="trend-count"><span>5.1k</span><div class="trend-bar" style="width:40px;"></div></div></div>
+    <div class="sidebar-item"><div class="sidebar-num">05</div><div class="sidebar-title">Nagelsmann — DFB-Kader Analyse</div><div class="sidebar-tag">Nationalteam</div><div class="trend-count"><span>3.9k</span><div class="trend-bar" style="width:30px;"></div></div></div>
+  </div>
+
+  <!-- Newsletter Inline -->
+  <div class="nl-inline">
+    <div>
+      <div class="nl-inline-title">Kein Spiel verpassen — <span>kostenloser Newsletter</span></div>
+      <div class="nl-inline-sub">1. &amp; 2. Bundesliga täglich · direkt in dein Postfach</div>
+    </div>
+    <div class="nl-form">
+      <input class="nl-input" type="email" placeholder="deine@email.de"/>
+      <button class="nl-btn">Anmelden</button>
+    </div>
+  </div>
+
+</div><!-- /main-grid -->
+
+<!-- Strip -->
+<div class="strip">
+  <div class="strip-card filterable" data-league="1. Bundesliga" data-title="1. bundesliga kommentar bundesliga neu erfinden">
+    <div class="card-cat c-me"><span class="cdot cd-me"></span>Meinung</div>
+    <div class="card-title">Kommentar: 1. Bundesliga muss sich neu erfinden</div>
+    <div class="card-excerpt">TV-Gelder, Investoren, Identität — der deutsche Fußball steht am Scheideweg.</div>
+    <div class="card-foot"><div class="card-meta">16. März</div><div class="read-time">6 Min.</div></div>
+  </div>
+  <div class="strip-card filterable" data-league="1. Bundesliga" data-title="1. bundesliga neuer verletzt münchen torwart">
+    <div class="card-cat c-bl"><span class="cdot cd-bl"></span>1. Bundesliga</div>
+    <div class="card-title">1. Bundesliga: Neuer verletzt — Bayern sucht Lösung</div>
+    <div class="card-excerpt">Wer hütet das Bayern-Tor? Drei Namen sind im Gespräch.</div>
+    <div class="card-foot"><div class="card-meta">Gestern · 12:00</div><div class="read-time">2 Min.</div></div>
+  </div>
+  <div class="strip-card filterable" data-league="2. Bundesliga" data-title="2. bundesliga fortuna düsseldorf niederlagen abstieg">
+    <div class="card-cat c-2bl"><span class="cdot cd-2bl"></span>2. Bundesliga</div>
+    <div class="card-title">2. Bundesliga: Fortuna verliert Anschluss nach 3 Niederlagen</div>
+    <div class="card-excerpt">Nach drei Niederlagen in Folge droht der Abstieg für den einstigen Erstligisten.</div>
+    <div class="card-foot"><div class="card-meta">15. März</div><div class="read-time">3 Min.</div></div>
+  </div>
+  <div class="strip-card filterable" data-league="1. Bundesliga" data-title="1. bundesliga statistik scorer rückrunde kane wirtz">
+    <div class="card-cat c-def"><span class="cdot cd-def"></span>Statistik</div>
+    <div class="card-title">1. Bundesliga: Kane, Wirtz, Undav — Scorer der Rückrunde</div>
+    <div class="card-excerpt">Die Zahlen der 1. Bundesliga Rückrunde 2026 — datenbasiertes Ranking.</div>
+    <div class="card-foot"><div class="card-meta">16. März · 11:20</div><div class="read-time">4 Min.</div></div>
+  </div>
+</div>
+
+<div id="noResults">
+  <div class="no-results-title">Keine Artikel gefunden</div>
+  <div class="no-results-sub">Für diesen Filter sind aktuell keine Beiträge vorhanden.</div>
+  <button onclick="clearFilter()">Filter aufheben</button>
+</div>
+
+{{ end }}

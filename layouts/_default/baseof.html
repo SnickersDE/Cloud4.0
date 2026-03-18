@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+  {{ partial "head.html" . }}
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+{{ partial "ticker.html" . }}
+{{ partial "header.html" . }}
+
+<div class="filter-bar" id="filterBar">
+  <span class="filter-bar-text" id="filterBarText">Filter aktiv</span>
+  <button class="filter-clear" onclick="clearFilter()">× Filter aufheben</button>
+</div>
+
+{{ partial "scores-bar.html" . }}
+
+<main>
+  {{ block "main" . }}{{ end }}
+</main>
+
+<button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+{{ partial "footer.html" . }}
+
+<script src="/js/main.js"></script>
+</body>
+</html>

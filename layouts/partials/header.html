@@ -1,0 +1,95 @@
+<header>
+  <div class="header-top">
+    <div>
+      <div class="logo-eyebrow">Bundesliga News · Seit 2026</div>
+      <a class="logo" href="/">
+        ZEIT <span class="thin">das</span> SICH<br><span class="accent">WAS DREHT</span>
+      </a>
+    </div>
+    <div class="header-right">
+      <div class="search-wrap">
+        <input class="search-input" id="searchInput" type="text" placeholder="Suche..."/>
+        <button class="search-btn" onclick="toggleSearch()">&#128269; Suche</button>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙 Dark</button>
+      <div class="header-meta">
+        <strong>1. &amp; 2. Bundesliga</strong>
+        <span id="headerDate"></span>
+      </div>
+    </div>
+  </div>
+
+  <nav id="mainNav">
+    <div class="nav-inner">
+      <div class="nav-left">
+
+        <!-- START -->
+        <div class="nav-item">
+          <a class="nav-btn{{ if .IsHome }} active{{ end }}" href="/">
+            Start <span class="nav-badge">7</span>
+          </a>
+          <div class="dropdown">
+            <a href="/">Alle News</a>
+            <a href="/spielplan/">Spielplan</a>
+            <a href="/tabelle/">Tabelle</a>
+            <a href="/ergebnisse/">Ergebnisse</a>
+            <a href="/?liga=1bl">1. Bundesliga <span class="liga-pill">1.BL</span></a>
+            <a href="/?liga=2bl">2. Bundesliga <span class="liga-pill">2.BL</span></a>
+          </div>
+        </div>
+
+        <!-- HOT -->
+        <div class="nav-item">
+          <a class="nav-btn{{ if eq .RelPermalink "/hot/" }} active{{ end }}" href="/hot/">
+            Hot <span class="nav-badge">3</span>
+          </a>
+          <div class="dropdown">
+            <a href="/hot/">Top Stories</a>
+            <a href="/hot/geruechte/">Gerüchte</a>
+            <a href="/hot/transfers/">Transfers</a>
+            <a href="/hot/analysen/">Analysen</a>
+            <a href="/?liga=1bl">1. Bundesliga <span class="liga-pill">1.BL</span></a>
+            <a href="/?liga=2bl">2. Bundesliga <span class="liga-pill">2.BL</span></a>
+          </div>
+        </div>
+
+        <!-- TABELLE -->
+        <div class="nav-item">
+          <a class="nav-btn{{ if eq .RelPermalink "/tabelle/" }} active{{ end }}" href="/tabelle/">
+            Tabelle
+          </a>
+          <div class="dropdown">
+            <a href="/tabelle/?liga=bl1">1. Bundesliga <span class="liga-pill">1.BL</span></a>
+            <a href="/tabelle/?liga=bl2">2. Bundesliga <span class="liga-pill">2.BL</span></a>
+          </div>
+        </div>
+
+        <!-- WIR -->
+        <div class="nav-item">
+          <a class="nav-btn{{ if eq .RelPermalink "/wir/" }} active{{ end }}" href="/wir/">
+            Wir
+          </a>
+          <div class="dropdown">
+            <a href="/wir/">Über uns</a>
+            <a href="/wir/redaktion/">Redaktion</a>
+            <a href="/wir/kontakt/">Kontakt</a>
+            <a href="/wir/newsletter/">Newsletter</a>
+          </div>
+        </div>
+
+      </div>
+      <button class="hamburger" id="hamburger" onclick="toggleMenu()">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="/">Start</a>
+    <a href="/?liga=1bl">1. Bundesliga</a>
+    <a href="/?liga=2bl">2. Bundesliga</a>
+    <a href="/hot/">Hot</a>
+    <a href="/tabelle/">Tabelle</a>
+    <a href="/wir/">Wir</a>
+  </div>
+</header>
