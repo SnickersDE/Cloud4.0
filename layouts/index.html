@@ -55,6 +55,7 @@
   {{ range .Site.RegularPages }}
     {{ if eq .Section "artikel" }}
     <div class="card filterable"
+         onclick="window.location.href='{{ .RelPermalink }}'"
          data-league="{{ .Params.liga }}"
          data-title="{{ .Params.liga | lower }} {{ .Title | lower }}">
       <button class="card-share" onclick="copyLink(event)">Link kopieren</button>
