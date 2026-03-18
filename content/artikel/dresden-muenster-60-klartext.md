@@ -4,6 +4,8 @@ date: 2026-03-15T16:10:00+01:00
 draft: false
 liga: "2. Bundesliga"
 slug: "dresden-muenster-60-klartext"
+image: "/images/articles/dresden-muenster-60-klartext.svg"
+
 categories: ["2-bundesliga", "kommentar"]
 tags: ["team:dresden", "team:muenster", "spieler:ben-bobzien", "liga:bl2"]
 cat_class: "c-2bl"

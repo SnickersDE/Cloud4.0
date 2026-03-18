@@ -4,6 +4,8 @@ date: 2026-03-17T23:10:00+01:00
 draft: false
 liga: "Champions League"
 slug: "real-madrid-schlaegt-mancity-21-rueckspiel"
+image: "/images/articles/real-madrid-schlaegt-mancity-21-rueckspiel.svg"
+
 aliases: ["/artikel/champions-league-real-kollaps/"]
 categories: ["champions-league", "analyse"]
 tags: ["team:real-madrid", "team:manchester-city", "spieler:vinicius-junior", "liga:ucl"]

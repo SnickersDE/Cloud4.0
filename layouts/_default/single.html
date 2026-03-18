@@ -22,14 +22,9 @@
   </div>
 
   <!-- Artikel Bild Placeholder -->
-  {{ $latest := first 1 (sort (where .Site.RegularPages "Section" "artikel") "Date" "desc") }}
-  {{ $latestGradient := "linear-gradient(135deg,#1a1a2e,#16213e)" }}
-  {{ if gt (len $latest) 0 }}
-    {{ with (index $latest 0).Params.gradient }}
-      {{ $latestGradient = . }}
-    {{ end }}
-  {{ end }}
-  <div class="artikel-img shimmer" id="latestArtikelImg" data-gradient="{{ $latestGradient }}"></div>
+  <div class="artikel-img shimmer" id="latestArtikelImg">
+    {{ if .Params.image }}<img src="{{ .Params.image | relURL }}" alt="{{ .Title }}">{{ end }}
+  </div>
 
   <!-- Artikel Body -->
   <div class="artikel-body">
@@ -59,7 +54,7 @@
   <div class="main-grid" style="margin-top:0;">
     {{ range $suggestions }}
       <div class="card" onclick="window.location.href='{{ .RelPermalink }}'">
-        <div class="card-img-ph shimmer"></div>
+        <div class="card-img-ph shimmer">{{ if .Params.image }}<img src="{{ .Params.image | relURL }}" alt="{{ .Title }}">{{ end }}</div>
         <div class="card-body">
           <div class="card-cat {{ .Params.cat_class | default "c-bl" }}">
             <span class="cdot {{ .Params.cd_class | default "cd-bl" }}"></span>
@@ -80,7 +75,7 @@
   <div class="main-grid keyword-list" id="keywordList">
     {{ range $i, $p := $sameLiga }}
       <div class="card keyword-card{{ if ge $i 5 }} keyword-card-hidden{{ end }}" onclick="window.location.href='{{ $p.RelPermalink }}'">
-        <div class="card-img-ph shimmer"></div>
+        <div class="card-img-ph shimmer">{{ if $p.Params.image }}<img src="{{ $p.Params.image | relURL }}" alt="{{ $p.Title }}">{{ end }}</div>
         <div class="card-body">
           <div class="card-cat {{ $p.Params.cat_class | default "c-bl" }}">
             <span class="cdot {{ $p.Params.cd_class | default "cd-bl" }}"></span>{{ $p.Params.liga | default "Bundesliga" }}
@@ -134,10 +129,6 @@
 
 <script>
 window.addEventListener('DOMContentLoaded', function() {
-  const hero = document.getElementById('latestArtikelImg');
-  if (hero && hero.dataset.gradient) {
-    hero.style.background = hero.dataset.gradient;
-  }
   const btn = document.getElementById('keywordMoreBtn');
   if (!btn) return;
   btn.addEventListener('click', function() {

@@ -4,6 +4,8 @@ date: 2026-03-18T20:41:00+01:00
 draft: false
 liga: "1. Bundesliga"
 slug: "bayern-leverkusen-11-analyse"
+image: "/images/articles/bayern-leverkusen-11-analyse.svg"
+
 aliases: ["/artikel/kane-sieg-klassiker/"]
 categories: ["1-bundesliga", "analyse"]
 tags: ["team:bayern", "team:leverkusen", "spieler:luis-diaz", "spieler:aleix-garcia", "liga:bl1"]

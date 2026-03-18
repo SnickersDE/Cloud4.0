@@ -4,6 +4,8 @@ date: 2026-03-14T18:05:00+01:00
 draft: false
 liga: "1. Bundesliga"
 slug: "dortmund-augsburg-20-klartext"
+image: "/images/articles/dortmund-augsburg-20-klartext.svg"
+
 categories: ["1-bundesliga", "kommentar"]
 tags: ["team:dortmund", "team:augsburg", "spieler:adeyemi", "liga:bl1"]
 cat_class: "c-bl"

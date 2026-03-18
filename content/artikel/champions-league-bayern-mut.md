@@ -4,6 +4,8 @@ date: 2026-03-17T23:30:00+01:00
 draft: false
 liga: "Champions League"
 slug: "bayern-atalanta-61-vorsprung-analyse"
+image: "/images/articles/bayern-atalanta-61-vorsprung-analyse.svg"
+
 aliases: ["/artikel/champions-league-bayern-mut/"]
 categories: ["champions-league", "analyse"]
 tags: ["team:bayern", "team:atalanta", "spieler:kane", "liga:ucl"]

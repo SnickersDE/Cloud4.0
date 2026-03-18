@@ -4,6 +4,8 @@ date: 2026-03-15T16:20:00+01:00
 draft: false
 liga: "2. Bundesliga"
 slug: "schalke-hannover-22-analyse"
+image: "/images/articles/schalke-hannover-22-analyse.svg"
+
 categories: ["2-bundesliga", "analyse"]
 tags: ["team:schalke", "team:hannover", "spieler:karaman", "liga:bl2"]
 cat_class: "c-2bl"

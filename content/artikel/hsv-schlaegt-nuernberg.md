@@ -4,6 +4,8 @@ date: 2026-03-14T20:35:00+01:00
 draft: false
 liga: "2. Bundesliga"
 slug: "hsv-koeln-11-analyse"
+image: "/images/articles/hsv-koeln-11-analyse.svg"
+
 aliases: ["/artikel/hsv-schlaegt-nuernberg/"]
 categories: ["2-bundesliga", "kommentar"]
 tags: ["team:hsv", "team:koeln", "spieler:fabio-vieira", "liga:bl2"]

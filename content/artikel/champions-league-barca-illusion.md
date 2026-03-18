@@ -4,6 +4,8 @@ date: 2026-03-17T22:55:00+01:00
 draft: false
 liga: "Champions League"
 slug: "arsenal-leverkusen-20-analyse"
+image: "/images/articles/arsenal-leverkusen-20-analyse.svg"
+
 aliases: ["/artikel/champions-league-barca-illusion/"]
 categories: ["champions-league", "analyse"]
 tags: ["team:arsenal", "team:leverkusen", "spieler:saka", "liga:ucl"]

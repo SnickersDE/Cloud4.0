@@ -4,6 +4,8 @@ date: 2026-03-15T21:15:00+01:00
 draft: false
 liga: "1. Bundesliga"
 slug: "stuttgart-leipzig-10-undav"
+image: "/images/articles/stuttgart-leipzig-10-undav.svg"
+
 categories: ["1-bundesliga", "analyse"]
 tags: ["team:stuttgart", "team:leipzig", "spieler:undav", "liga:bl1"]
 cat_class: "c-bl"

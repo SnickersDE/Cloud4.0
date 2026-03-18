@@ -4,6 +4,8 @@ date: 2026-03-17T23:00:00+01:00
 draft: false
 liga: "Champions League"
 slug: "psg-schlaegt-chelsea-30-und-dominiert"
+image: "/images/articles/psg-schlaegt-chelsea-30-und-dominiert.svg"
+
 aliases: ["/artikel/champions-league-psg-desaster/"]
 categories: ["champions-league", "kommentar"]
 tags: ["team:psg", "team:chelsea", "spieler:dembele", "liga:ucl"]

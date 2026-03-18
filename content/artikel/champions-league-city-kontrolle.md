@@ -4,6 +4,8 @@ date: 2026-03-17T22:20:00+01:00
 draft: false
 liga: "Champions League"
 slug: "city-verliert-gegen-real-halbraeume-offen"
+image: "/images/articles/city-verliert-gegen-real-halbraeume-offen.svg"
+
 aliases: ["/artikel/champions-league-city-kontrolle/"]
 categories: ["champions-league", "taktik"]
 tags: ["team:manchester-city", "team:real-madrid", "spieler:haaland", "liga:ucl"]

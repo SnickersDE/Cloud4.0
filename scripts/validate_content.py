@@ -55,7 +55,7 @@ def validate_file(path: Path) -> list[str]:
     errors: list[str] = []
     if not block:
         return [f"{path}: Front Matter fehlt oder ist ungültig"]
-    for scalar in ("slug", "liga", "teaser", "author"):
+    for scalar in ("slug", "image", "liga", "teaser", "author"):
         if not has_scalar(block, scalar):
             errors.append(f"{path}: Pflichtfeld '{scalar}' fehlt")
     for arr in ("categories", "tags"):

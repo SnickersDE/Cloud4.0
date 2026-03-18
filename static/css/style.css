@@ -128,6 +128,7 @@ nav.scrolled { box-shadow:0 4px 24px rgba(0,0,0,.5); }
 .hero-main { position:relative; overflow:hidden; border-right:1px solid var(--border); cursor:pointer; }
 .hero-main:hover .hero-pic { transform:scale(1.04); }
 .hero-pic { width:100%; height:540px; display:block; transition:transform .6s ease; background:linear-gradient(160deg,#0d0d0d 0%,#1e1e1e 40%,#111 100%); position:relative; overflow:hidden; }
+.hero-pic img,.side-thumb-ph img,.card-img-ph img,.artikel-img img { width:100%; height:100%; object-fit:cover; display:block; }
 .shimmer { position:relative; overflow:hidden; }
 .shimmer::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.06) 50%,transparent 100%); animation:shimmer 2.4s ease-in-out infinite; background-size:200% 100%; }
 @keyframes shimmer { 0% { background-position:-200% 0 } 100% { background-position:200% 0 } }

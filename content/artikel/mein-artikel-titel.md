@@ -4,6 +4,8 @@ date: 2026-03-18T14:11:57+01:00
 draft: false
 liga: "1. Bundesliga"
 slug: "statistik-schock-scorer-rueckrunde-aktuell"
+image: "/images/articles/statistik-schock-scorer-rueckrunde-aktuell.svg"
+
 aliases: ["/artikel/mein-artikel-titel/"]
 categories: ["1-bundesliga", "statistik"]
 tags: ["team:stuttgart", "team:dortmund", "team:frankfurt", "spieler:undav", "spieler:adeyemi", "spieler:kalimuendo", "liga:bl1"]
