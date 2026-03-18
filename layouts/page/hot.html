@@ -47,7 +47,7 @@
       {{ range .Site.RegularPages }}
       {{ if eq .Section "artikel" }}
         <div class="card hot-team-card" data-title="{{ .Title | lower }}" onclick="window.location.href='{{ .RelPermalink }}'">
-          <div class="card-img-ph shimmer">{{ if .Params.image }}<img src="{{ .Params.image | relURL }}" alt="{{ .Title }}">{{ end }}</div>
+          <div class="card-img-ph shimmer">{{ if .Params.image }}<img src="{{ (strings.TrimPrefix "/" .Params.image) | relURL }}" alt="{{ .Title }}">{{ end }}</div>
           <div class="card-body">
             <div class="card-cat {{ .Params.cat_class | default "c-bl" }}">
               <span class="cdot {{ .Params.cd_class | default "cd-bl" }}"></span>{{ .Params.liga | default "1. Bundesliga" }}

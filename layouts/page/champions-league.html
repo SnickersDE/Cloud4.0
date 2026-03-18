@@ -27,7 +27,7 @@
 
   {{ range first 5 (sort ($.Scratch.Get "clpages") "Date" "desc") }}
     <div class="card" onclick="window.location.href='{{ .RelPermalink }}'">
-      <div class="card-img-ph shimmer">{{ if .Params.image }}<img src="{{ .Params.image | relURL }}" alt="{{ .Title }}">{{ end }}</div>
+      <div class="card-img-ph shimmer">{{ if .Params.image }}<img src="{{ (strings.TrimPrefix "/" .Params.image) | relURL }}" alt="{{ .Title }}">{{ end }}</div>
       <div class="card-body">
         <div class="card-cat {{ .Params.cat_class | default "c-cl" }}">
           <span class="cdot {{ .Params.cd_class | default "cd-cl" }}"></span>

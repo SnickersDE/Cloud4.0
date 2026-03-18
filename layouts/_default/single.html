@@ -23,7 +23,7 @@
 
   <!-- Artikel Bild Placeholder -->
   <div class="artikel-img shimmer" id="latestArtikelImg">
-    {{ if .Params.image }}<img src="{{ .Params.image | relURL }}" alt="{{ .Title }}">{{ end }}
+    {{ if .Params.image }}<img src="{{ (strings.TrimPrefix "/" .Params.image) | relURL }}" alt="{{ .Title }}">{{ end }}
   </div>
 
   <!-- Artikel Body -->
@@ -54,7 +54,7 @@
   <div class="main-grid" style="margin-top:0;">
     {{ range $suggestions }}
       <div class="card" onclick="window.location.href='{{ .RelPermalink }}'">
-        <div class="card-img-ph shimmer">{{ if .Params.image }}<img src="{{ .Params.image | relURL }}" alt="{{ .Title }}">{{ end }}</div>
+        <div class="card-img-ph shimmer">{{ if .Params.image }}<img src="{{ (strings.TrimPrefix "/" .Params.image) | relURL }}" alt="{{ .Title }}">{{ end }}</div>
         <div class="card-body">
           <div class="card-cat {{ .Params.cat_class | default "c-bl" }}">
             <span class="cdot {{ .Params.cd_class | default "cd-bl" }}"></span>
@@ -75,7 +75,7 @@
   <div class="main-grid keyword-list" id="keywordList">
     {{ range $i, $p := $sameLiga }}
       <div class="card keyword-card{{ if ge $i 5 }} keyword-card-hidden{{ end }}" onclick="window.location.href='{{ $p.RelPermalink }}'">
-        <div class="card-img-ph shimmer">{{ if $p.Params.image }}<img src="{{ $p.Params.image | relURL }}" alt="{{ $p.Title }}">{{ end }}</div>
+        <div class="card-img-ph shimmer">{{ if $p.Params.image }}<img src="{{ (strings.TrimPrefix "/" $p.Params.image) | relURL }}" alt="{{ $p.Title }}">{{ end }}</div>
         <div class="card-body">
           <div class="card-cat {{ $p.Params.cat_class | default "c-bl" }}">
             <span class="cdot {{ $p.Params.cd_class | default "cd-bl" }}"></span>{{ $p.Params.liga | default "Bundesliga" }}

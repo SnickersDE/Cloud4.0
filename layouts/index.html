@@ -12,7 +12,7 @@
     <div class="hero-badge">Breaking</div>
     <div class="hero-pic shimmer">
       {{ if $hero.Params.image }}
-        <img src="{{ $hero.Params.image | relURL }}" alt="{{ $hero.Title }}">
+        <img src="{{ (strings.TrimPrefix "/" $hero.Params.image) | relURL }}" alt="{{ $hero.Title }}">
       {{ end }}
     </div>
     <div class="hero-content">
@@ -26,7 +26,7 @@
     {{ range first 5 (after 1 $allArticles) }}
       <div class="hero-side-item filterable" onclick="window.location.href='{{ .RelPermalink }}'" data-league="{{ .Params.liga }}" data-title="{{ .Params.liga | lower }} {{ .Title | lower }}">
         <div class="side-thumb-ph shimmer">
-          {{ if .Params.image }}<img src="{{ .Params.image | relURL }}" alt="{{ .Title }}">{{ end }}
+          {{ if .Params.image }}<img src="{{ (strings.TrimPrefix "/" .Params.image) | relURL }}" alt="{{ .Title }}">{{ end }}
         </div>
         <div>
           <div class="side-cat">{{ .Params.liga }}</div>
@@ -53,7 +53,7 @@
          data-title="{{ .Params.liga | lower }} {{ .Title | lower }}">
       <button class="card-share" onclick="copyLink(event)">Link kopieren</button>
       <div class="card-img-ph shimmer">
-        {{ if .Params.image }}<img src="{{ .Params.image | relURL }}" alt="{{ .Title }}">{{ end }}
+        {{ if .Params.image }}<img src="{{ (strings.TrimPrefix "/" .Params.image) | relURL }}" alt="{{ .Title }}">{{ end }}
       </div>
       <div class="card-body">
         <div class="card-cat {{ .Params.cat_class | default "c-bl" }}">
