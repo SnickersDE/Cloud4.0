@@ -7,6 +7,19 @@
   </div>
   <div class="hot-right" id="deckHighlights"></div>
 </div>
+<div class="support-wrap" id="deckDetail" style="display:none;margin-top:20px;">
+  <div style="width:100%;">
+    <div class="wb-title" id="deckDetailTitle">Deck</div>
+    <p class="author-text" id="deckDetailMeta"></p>
+    <div class="main-grid" id="deckCardsGrid" style="margin-top:14px;"></div>
+    <div class="nl-form" style="display:block;margin-top:14px;">
+      <input class="nl-input" id="newFlashcardFront" type="text" placeholder="Frage / Vorderseite" style="width:100%;border-right:1px solid #333;margin-bottom:8px;"/>
+      <textarea class="nl-input" id="newFlashcardBack" placeholder="Antwort / Rückseite" style="width:100%;height:120px;border-right:1px solid #333;margin-bottom:8px;"></textarea>
+      <button class="nl-btn" id="addFlashcardBtn" type="button">Karte hinzufügen</button>
+    </div>
+  </div>
+  <div class="support-qr" id="deckStatsBox">DECK</div>
+</div>
 <div class="container"><div class="section-label">Decks</div></div>
 <div class="main-grid" id="deckGrid"></div>
 {{ end }}

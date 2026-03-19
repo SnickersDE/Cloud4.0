@@ -305,12 +305,22 @@ const Cloud4 = (() => {
     const detailBox = byId('moduleDetail');
     if (!detailBox) return;
     const moduleId = new URLSearchParams(window.location.search).get('id');
+    const editorWrap = byId('moduleEditor');
+    const sectionsGrid = byId('moduleSectionsGrid');
+    const outlineBox = byId('moduleOutlineBox');
+    const pdfWrap = byId('modulePdfBox');
+    const pdfList = byId('modulePdfList');
+    const pdfNameInput = byId('modulePdfName');
+    const pdfUrlInput = byId('modulePdfUrl');
+    const pdfAddBtn = byId('modulePdfAddBtn');
     if (!moduleId) {
       detailBox.style.display = 'none';
       detailBox.innerHTML = '';
+      if (editorWrap) editorWrap.style.display = 'none';
+      if (pdfWrap) pdfWrap.style.display = 'none';
       return;
     }
-    const client = createSupabase();
+    const client = await ensureSupabaseClient();
     if (!client) {
       detailBox.style.display = '';
       detailBox.innerHTML = '<div class="wb-title">Supabase nicht verfügbar</div><p class="author-text">Bitte Verbindung prüfen.</p>';
@@ -326,6 +336,16 @@ const Cloud4 = (() => {
       detailBox.innerHTML = `<div class="wb-title">Modul nicht gefunden</div><p class="author-text">${esc(normalizeSupabaseError(error))}</p>`;
       return;
     }
+    const { data: sections } = await client
+      .from('module_sections')
+      .select('*')
+      .eq('module_id', moduleId)
+      .order('type', { ascending: true });
+    const { data: pdfs } = await client
+      .from('module_pdfs')
+      .select('*')
+      .eq('module_id', moduleId)
+      .order('created_at', { ascending: false });
     detailBox.style.display = '';
     detailBox.innerHTML = `
       <div>
@@ -335,6 +355,307 @@ const Cloud4 = (() => {
       </div>
       <div class="support-qr">${esc(moduleRow.topic || 'MODUL')}</div>
     `;
+    if (editorWrap && sectionsGrid) {
+      editorWrap.style.display = '';
+      setText('moduleEditorTitle', moduleRow.title || 'Modul bearbeiten');
+      setText('moduleEditorMeta', `${sections?.length || 0} Abschnitte · ${moduleRow.difficulty || 'Standard'}`);
+      sectionsGrid.innerHTML = '';
+      (sections || []).forEach((section) => {
+        const box = document.createElement('div');
+        box.className = 'card';
+        box.innerHTML = `
+          <div class="card-body">
+            <div class="card-title">${esc(section.title || section.type || 'Abschnitt')}</div>
+            <textarea class="nl-input module-section-content" data-id="${esc(section.id)}" style="width:100%;height:130px;border:1px solid #333;margin-top:8px;">${esc(section.content || '')}</textarea>
+            <div class="card-foot">
+              <button class="soc-btn module-section-save" data-id="${esc(section.id)}" type="button">Speichern</button>
+            </div>
+          </div>
+        `;
+        sectionsGrid.appendChild(box);
+      });
+      if (outlineBox) {
+        const outlines = (sections || []).map((s, idx) => `${String(idx + 1).padStart(2, '0')} ${s.title || s.type || 'Abschnitt'}`);
+        outlineBox.innerHTML = outlines.length ? outlines.join('<br>') : 'Keine Gliederung';
+      }
+      sectionsGrid.querySelectorAll('.module-section-save').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const done = setBusy(btn, 'Speichert…');
+          const sectionId = btn.dataset.id;
+          const textarea = sectionsGrid.querySelector(`.module-section-content[data-id="${sectionId}"]`);
+          const content = textarea?.value || '';
+          const { error: updateError } = await client
+            .from('module_sections')
+            .update({ content })
+            .eq('id', sectionId);
+          done();
+          if (updateError) {
+            setText('moduleEditorMeta', `Speicherfehler: ${normalizeSupabaseError(updateError)}`);
+            return;
+          }
+          setText('moduleEditorMeta', `Änderung gespeichert (${dateLabel(Date.now())})`);
+        });
+      });
+    }
+    if (pdfWrap && pdfList) {
+      pdfWrap.style.display = '';
+      pdfList.innerHTML = (pdfs || []).map((pdf, idx) => `${String(idx + 1).padStart(2, '0')} <a href="${esc(pdf.url)}" target="_blank" rel="noopener noreferrer">${esc(pdf.name || 'PDF')}</a>`).join('<br>') || 'Keine PDFs';
+      if (pdfAddBtn) {
+        pdfAddBtn.onclick = async () => {
+          const done = setBusy(pdfAddBtn, 'Speichert…');
+          const name = pdfNameInput?.value?.trim() || '';
+          const url = pdfUrlInput?.value?.trim() || '';
+          if (!name || !url) {
+            done();
+            setText('moduleEditorMeta', 'PDF Name und URL sind erforderlich.');
+            return;
+          }
+          const { error: insertError } = await client
+            .from('module_pdfs')
+            .insert({ module_id: moduleId, name, url, user_id: currentUser?.id || null });
+          done();
+          if (insertError) {
+            setText('moduleEditorMeta', `PDF Fehler: ${normalizeSupabaseError(insertError)}`);
+            return;
+          }
+          pdfNameInput.value = '';
+          pdfUrlInput.value = '';
+          await renderModuleDetail();
+        };
+      }
+    }
+  }
+
+  async function renderDeckDetail() {
+    const detailWrap = byId('deckDetail');
+    const cardsGrid = byId('deckCardsGrid');
+    const statsBox = byId('deckStatsBox');
+    const addBtn = byId('addFlashcardBtn');
+    if (!detailWrap || !cardsGrid || !addBtn) return;
+    const deckId = new URLSearchParams(window.location.search).get('id');
+    if (!deckId) {
+      detailWrap.style.display = 'none';
+      cardsGrid.innerHTML = '';
+      return;
+    }
+    const client = await ensureSupabaseClient();
+    if (!client) return;
+    const { data: deck, error } = await client.from('decks').select('*').eq('id', deckId).maybeSingle();
+    if (error || !deck) {
+      detailWrap.style.display = '';
+      cardsGrid.innerHTML = `<div class="card"><div class="card-body"><div class="card-title">Deck nicht gefunden</div><div class="card-excerpt">${esc(normalizeSupabaseError(error))}</div></div></div>`;
+      return;
+    }
+    const { data: cards } = await client.from('flashcards').select('*').eq('deck_id', deckId).order('created_at', { ascending: true });
+    detailWrap.style.display = '';
+    setText('deckDetailTitle', deck.title || 'Deck');
+    setText('deckDetailMeta', `${deck.theme || 'Thema offen'} · ${(cards || []).length} Karten`);
+    cardsGrid.innerHTML = '';
+    (cards || []).forEach((card) => {
+      const node = document.createElement('div');
+      node.className = 'card';
+      node.innerHTML = `
+        <div class="card-body">
+          <div class="card-title">${esc(card.front || 'Frage')}</div>
+          <textarea class="nl-input flashcard-back" data-id="${esc(card.id)}" style="width:100%;height:100px;border:1px solid #333;margin-top:8px;">${esc(card.back || '')}</textarea>
+          <div class="card-foot">
+            <button class="soc-btn flashcard-save" data-id="${esc(card.id)}" type="button">Speichern</button>
+            <button class="soc-btn flashcard-delete" data-id="${esc(card.id)}" type="button">Löschen</button>
+          </div>
+        </div>
+      `;
+      cardsGrid.appendChild(node);
+    });
+    const known = (cards || []).filter((c) => c.status === 'known').length;
+    const unknown = Math.max(0, (cards || []).length - known);
+    if (statsBox) statsBox.innerHTML = `Known ${known}<br>Unknown ${unknown}`;
+    cardsGrid.querySelectorAll('.flashcard-save').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const done = setBusy(btn, 'Speichert…');
+        const cardId = btn.dataset.id;
+        const back = cardsGrid.querySelector(`.flashcard-back[data-id="${cardId}"]`)?.value || '';
+        const { error: updateError } = await client.from('flashcards').update({ back }).eq('id', cardId);
+        done();
+        if (updateError) {
+          setText('deckDetailMeta', `Fehler: ${normalizeSupabaseError(updateError)}`);
+          return;
+        }
+        setText('deckDetailMeta', 'Karte gespeichert.');
+      });
+    });
+    cardsGrid.querySelectorAll('.flashcard-delete').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const done = setBusy(btn, 'Löscht…');
+        const cardId = btn.dataset.id;
+        const { error: deleteError } = await client.from('flashcards').delete().eq('id', cardId);
+        done();
+        if (deleteError) {
+          setText('deckDetailMeta', `Fehler: ${normalizeSupabaseError(deleteError)}`);
+          return;
+        }
+        await renderDeckDetail();
+      });
+    });
+    addBtn.onclick = async () => {
+      const done = setBusy(addBtn, 'Erstellt…');
+      const front = byId('newFlashcardFront')?.value?.trim() || '';
+      const back = byId('newFlashcardBack')?.value?.trim() || '';
+      if (!front || !back) {
+        done();
+        setText('deckDetailMeta', 'Bitte Frage und Antwort eingeben.');
+        return;
+      }
+      const { error: insertError } = await client
+        .from('flashcards')
+        .insert({ deck_id: deckId, front, back, status: 'new' });
+      done();
+      if (insertError) {
+        setText('deckDetailMeta', `Fehler: ${normalizeSupabaseError(insertError)}`);
+        return;
+      }
+      byId('newFlashcardFront').value = '';
+      byId('newFlashcardBack').value = '';
+      await renderDeckDetail();
+    };
+  }
+
+  async function renderQuizDetail() {
+    const detailWrap = byId('quizDetail');
+    const questionsGrid = byId('quizQuestionsGrid');
+    const statsBox = byId('quizStatsBox');
+    const addBtn = byId('addQuizQuestionBtn');
+    if (!detailWrap || !questionsGrid || !addBtn) return;
+    const quizId = new URLSearchParams(window.location.search).get('id');
+    if (!quizId) {
+      detailWrap.style.display = 'none';
+      questionsGrid.innerHTML = '';
+      return;
+    }
+    const client = await ensureSupabaseClient();
+    if (!client) return;
+    const { data: quiz, error } = await client.from('quizzes').select('*').eq('id', quizId).maybeSingle();
+    if (error || !quiz) {
+      detailWrap.style.display = '';
+      questionsGrid.innerHTML = `<div class="card"><div class="card-body"><div class="card-title">Quiz nicht gefunden</div><div class="card-excerpt">${esc(normalizeSupabaseError(error))}</div></div></div>`;
+      return;
+    }
+    const { data: questions } = await client.from('quiz_questions').select('*').eq('quiz_id', quizId).order('order', { ascending: true });
+    detailWrap.style.display = '';
+    setText('quizDetailTitle', quiz.title || 'Quiz');
+    setText('quizDetailMeta', `${quiz.difficulty || 'Grundlagen'} · ${(questions || []).length} Fragen`);
+    questionsGrid.innerHTML = '';
+    (questions || []).forEach((questionRow, idx) => {
+      const options = Array.isArray(questionRow.options) ? questionRow.options.join(' | ') : '';
+      const correct = Array.isArray(questionRow.correct_answer) ? Number(questionRow.correct_answer[0] || 0) : Number(questionRow.correct_answer || 0);
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-body">
+          <div class="card-title">Frage ${idx + 1}</div>
+          <input class="nl-input quiz-question-text" data-id="${esc(questionRow.id)}" value="${esc(questionRow.question || '')}" style="width:100%;border:1px solid #333;margin:8px 0;"/>
+          <input class="nl-input quiz-question-options" data-id="${esc(questionRow.id)}" value="${esc(options)}" style="width:100%;border:1px solid #333;margin-bottom:8px;"/>
+          <input class="nl-input quiz-question-correct" data-id="${esc(questionRow.id)}" type="number" value="${correct}" style="width:100%;border:1px solid #333;margin-bottom:8px;"/>
+          <div class="card-foot">
+            <button class="soc-btn quiz-question-save" data-id="${esc(questionRow.id)}" type="button">Speichern</button>
+            <button class="soc-btn quiz-question-delete" data-id="${esc(questionRow.id)}" type="button">Löschen</button>
+          </div>
+        </div>
+      `;
+      questionsGrid.appendChild(card);
+    });
+    if (statsBox) statsBox.innerHTML = `${quiz.difficulty || 'Quiz'}<br>${(questions || []).length} Fragen`;
+    questionsGrid.querySelectorAll('.quiz-question-save').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const done = setBusy(btn, 'Speichert…');
+        const id = btn.dataset.id;
+        const question = questionsGrid.querySelector(`.quiz-question-text[data-id="${id}"]`)?.value || '';
+        const optionsText = questionsGrid.querySelector(`.quiz-question-options[data-id="${id}"]`)?.value || '';
+        const options = optionsText.split('|').map((v) => v.trim()).filter(Boolean);
+        const correct = Number(questionsGrid.querySelector(`.quiz-question-correct[data-id="${id}"]`)?.value || 0);
+        const payload = { question, options, correct_answer: [Number.isFinite(correct) ? correct : 0] };
+        const { error: updateError } = await client.from('quiz_questions').update(payload).eq('id', id);
+        done();
+        if (updateError) {
+          setText('quizDetailMeta', `Fehler: ${normalizeSupabaseError(updateError)}`);
+          return;
+        }
+        setText('quizDetailMeta', 'Frage gespeichert.');
+      });
+    });
+    questionsGrid.querySelectorAll('.quiz-question-delete').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const done = setBusy(btn, 'Löscht…');
+        const id = btn.dataset.id;
+        const { error: deleteError } = await client.from('quiz_questions').delete().eq('id', id);
+        done();
+        if (deleteError) {
+          setText('quizDetailMeta', `Fehler: ${normalizeSupabaseError(deleteError)}`);
+          return;
+        }
+        await renderQuizDetail();
+      });
+    });
+    addBtn.onclick = async () => {
+      const done = setBusy(addBtn, 'Erstellt…');
+      const question = byId('newQuizQuestion')?.value?.trim() || '';
+      const optionsText = byId('newQuizOptions')?.value?.trim() || '';
+      const options = optionsText.split('|').map((v) => v.trim()).filter(Boolean);
+      const correct = Number(byId('newQuizCorrectIndex')?.value || 0);
+      if (!question || options.length < 2) {
+        done();
+        setText('quizDetailMeta', 'Frage und mindestens zwei Optionen erforderlich.');
+        return;
+      }
+      const { error: insertError } = await client
+        .from('quiz_questions')
+        .insert({ quiz_id: quizId, type: 'multiple_choice', question, options, correct_answer: [Number.isFinite(correct) ? correct : 0], order: (questions || []).length });
+      done();
+      if (insertError) {
+        setText('quizDetailMeta', `Fehler: ${normalizeSupabaseError(insertError)}`);
+        return;
+      }
+      byId('newQuizQuestion').value = '';
+      byId('newQuizOptions').value = '';
+      byId('newQuizCorrectIndex').value = '';
+      await renderQuizDetail();
+    };
+  }
+
+  async function renderNetworkWorkspace() {
+    const detailWrap = byId('networkDetail');
+    const statsBox = byId('networkStatsBox');
+    const createBtn = byId('createGroupBtn');
+    if (!detailWrap || !createBtn) return;
+    const client = await ensureSupabaseClient();
+    if (!client) return;
+    detailWrap.style.display = '';
+    const friendsGrid = byId('friendsGrid');
+    const groupsGrid = byId('groupsGrid');
+    setText('networkDetailTitle', 'Vernetzen Workspace');
+    setText('networkDetailMeta', 'Freunde, Gruppen und gemeinsames Arbeiten');
+    if (statsBox) statsBox.innerHTML = `${friendsGrid?.children.length || 0} Friends<br>${groupsGrid?.children.length || 0} Groups`;
+    createBtn.onclick = async () => {
+      const done = setBusy(createBtn, 'Erstellt…');
+      const name = byId('newGroupName')?.value?.trim() || '';
+      const description = byId('newGroupDescription')?.value?.trim() || '';
+      if (!name) {
+        done();
+        setText('networkDetailMeta', 'Gruppenname ist erforderlich.');
+        return;
+      }
+      const { data } = await client.auth.getUser();
+      const userId = data?.user?.id || null;
+      const { error } = await client.from('groups').insert({ name, description, owner_id: userId });
+      done();
+      if (error) {
+        setText('networkDetailMeta', `Gruppenfehler: ${normalizeSupabaseError(error)}`);
+        return;
+      }
+      byId('newGroupName').value = '';
+      byId('newGroupDescription').value = '';
+      await renderVernetzen();
+      await renderNetworkWorkspace();
+    };
   }
 
   async function renderVernetzen() {
@@ -913,6 +1234,26 @@ const Cloud4 = (() => {
         if (byId('registerStatus')) byId('registerStatus').textContent = 'Registrierung erfolgreich. Bitte E-Mail bestätigen.';
       });
     }
+    const registerInlineBtn = byId('registerSubmitInline');
+    if (registerInlineBtn) {
+      registerInlineBtn.addEventListener('click', async () => {
+        const done = setBusy(registerInlineBtn, 'Erstellt…');
+        const email = byId('registerEmailInline')?.value || '';
+        const password = byId('registerPasswordInline')?.value || '';
+        if (!email.trim() || !password.trim()) {
+          done();
+          setText('adminStatus', 'Für Registrierung E-Mail und Passwort eingeben.');
+          return;
+        }
+        const { error } = await client.auth.signUp({ email, password });
+        done();
+        if (error) {
+          setText('adminStatus', `Registrierung fehlgeschlagen: ${normalizeSupabaseError(error)}`);
+          return;
+        }
+        setText('adminStatus', 'Registrierung erfolgreich. Bitte E-Mail bestätigen.');
+      });
+    }
   }
 
   async function boot() {
@@ -940,7 +1281,10 @@ const Cloud4 = (() => {
     await safe(() => renderCollection('quizzes', 'quizGrid', 'quizHighlights'));
     await safe(() => renderCollection('documents', 'pipelineGrid', '', 'title', 'upload_date'));
     await safe(renderModuleDetail);
+    await safe(renderDeckDetail);
+    await safe(renderQuizDetail);
     await safe(renderVernetzen);
+    await safe(renderNetworkWorkspace);
     await safe(renderKonto);
     await safe(renderMitschrift);
     await safe(setupAdminPage);

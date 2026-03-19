@@ -7,7 +7,27 @@
   </div>
   <div class="hot-right" id="moduleHighlights"></div>
 </div>
+<div class="support-wrap" id="moduleDetail" style="display:none;margin-top:20px;"></div>
 <div class="container"><div class="section-label">Module</div></div>
 <div class="main-grid" id="moduleGrid"></div>
-<div class="support-wrap" id="moduleDetail" style="display:none;margin-top:20px;"></div>
+<div class="container"><div class="section-label">Gliederung und Bearbeitung</div></div>
+<div class="support-wrap" id="moduleEditor" style="display:none;">
+  <div style="width:100%;">
+    <div class="wb-title" id="moduleEditorTitle">Modul bearbeiten</div>
+    <p class="author-text" id="moduleEditorMeta"></p>
+    <div class="main-grid" id="moduleSectionsGrid" style="margin-top:16px;"></div>
+  </div>
+  <div class="support-qr" id="moduleOutlineBox">OUTLINE</div>
+</div>
+<div class="container"><div class="section-label">PDF-Container</div></div>
+<div class="support-wrap" id="modulePdfBox" style="display:none;">
+  <div style="width:100%;">
+    <div class="nl-form" style="display:block;">
+      <input class="nl-input" id="modulePdfName" type="text" placeholder="PDF Name" style="width:100%;border-right:1px solid #333;margin-bottom:8px;"/>
+      <input class="nl-input" id="modulePdfUrl" type="text" placeholder="https://...pdf" style="width:100%;border-right:1px solid #333;margin-bottom:8px;"/>
+      <button class="nl-btn" id="modulePdfAddBtn" type="button">PDF hinzufügen</button>
+    </div>
+  </div>
+  <div class="support-qr" id="modulePdfList">Keine PDFs</div>
+</div>
 {{ end }}

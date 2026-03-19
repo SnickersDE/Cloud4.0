@@ -7,6 +7,20 @@
   </div>
   <div class="hot-right" id="quizHighlights"></div>
 </div>
+<div class="support-wrap" id="quizDetail" style="display:none;margin-top:20px;">
+  <div style="width:100%;">
+    <div class="wb-title" id="quizDetailTitle">Quiz</div>
+    <p class="author-text" id="quizDetailMeta"></p>
+    <div class="main-grid" id="quizQuestionsGrid" style="margin-top:14px;"></div>
+    <div class="nl-form" style="display:block;margin-top:14px;">
+      <input class="nl-input" id="newQuizQuestion" type="text" placeholder="Neue Frage" style="width:100%;border-right:1px solid #333;margin-bottom:8px;"/>
+      <input class="nl-input" id="newQuizOptions" type="text" placeholder="Optionen mit | trennen" style="width:100%;border-right:1px solid #333;margin-bottom:8px;"/>
+      <input class="nl-input" id="newQuizCorrectIndex" type="number" placeholder="Index richtige Antwort (0-basiert)" style="width:100%;border-right:1px solid #333;margin-bottom:8px;"/>
+      <button class="nl-btn" id="addQuizQuestionBtn" type="button">Frage hinzufügen</button>
+    </div>
+  </div>
+  <div class="support-qr" id="quizStatsBox">QUIZ</div>
+</div>
 <div class="container"><div class="section-label">Quiz Sets</div></div>
 <div class="main-grid" id="quizGrid"></div>
 {{ end }}

@@ -62,8 +62,13 @@
           </a>
         </div>
         <div class="nav-item">
-          <a class="nav-btn{{ if eq .RelPermalink "/admin/" }} active{{ end }}" href="{{ "admin/" | relURL }}">
-            Admin
+          <a class="nav-btn{{ if eq .RelPermalink "/login/" }} active{{ end }}" href="{{ "login/" | relURL }}">
+            Anmelden
+          </a>
+        </div>
+        <div class="nav-item">
+          <a class="nav-btn{{ if eq .RelPermalink "/register/" }} active{{ end }}" href="{{ "register/" | relURL }}">
+            Registrieren
           </a>
         </div>
 
@@ -83,6 +88,7 @@
     <a href="{{ "ai-mode/" | relURL }}">AI Mode</a>
     <a href="{{ "vernetzen/" | relURL }}">Vernetzen</a>
     <a href="{{ "konto/" | relURL }}">Mein Konto</a>
-    <a href="{{ "admin/" | relURL }}">Admin</a>
+    <a href="{{ "login/" | relURL }}">Anmelden</a>
+    <a href="{{ "register/" | relURL }}">Registrieren</a>
   </div>
 </header>
