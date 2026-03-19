@@ -153,6 +153,7 @@ const Cloud4 = (() => {
       currentRole = 'guest';
       currentDisplayName = '';
       updateAuthNavigation();
+      refreshHud();
       return;
     }
     const { data: profile } = await client
@@ -168,6 +169,7 @@ const Cloud4 = (() => {
     currentRole = roleRows?.[0]?.role || 'authenticated';
     currentDisplayName = profile?.full_name || profile?.username || currentUser.email || 'User';
     updateAuthNavigation();
+    refreshHud();
     logEvent('INFO', 'Auth state loaded', `role=${currentRole} user=${currentDisplayName}`);
   }
 
@@ -208,6 +210,42 @@ const Cloud4 = (() => {
     guestNodes.forEach((node) => {
       node.style.display = currentUser ? 'none' : '';
     });
+    const authNodes = document.querySelectorAll('.auth-only-link');
+    authNodes.forEach((node) => {
+      node.style.display = currentUser ? '' : 'none';
+    });
+  }
+
+  function refreshHud() {
+    if (typeof window.loadTicker === 'function') window.loadTicker();
+    if (typeof window.loadScoreChips === 'function') window.loadScoreChips();
+  }
+
+  function bindGlobalLogout() {
+    const client = createSupabase();
+    if (!client) return;
+    const handler = async (event) => {
+      event.preventDefault();
+      const { error } = await client.auth.signOut();
+      if (error) {
+        logEvent('ERROR', 'Global logout failed', normalizeSupabaseError(error));
+        return;
+      }
+      await loadAuthState();
+      await loadMetrics();
+      refreshHud();
+      window.location.href = `${rootPath()}`;
+    };
+    const navLogout = byId('navLogoutLink');
+    const mobileLogout = byId('mobileLogoutLink');
+    if (navLogout && !navLogout.dataset.bound) {
+      navLogout.dataset.bound = '1';
+      navLogout.addEventListener('click', handler);
+    }
+    if (mobileLogout && !mobileLogout.dataset.bound) {
+      mobileLogout.dataset.bound = '1';
+      mobileLogout.addEventListener('click', handler);
+    }
   }
 
   function getScoreChips() {
@@ -1544,7 +1582,7 @@ const Cloud4 = (() => {
         done();
         logEvent('INFO', 'Login erfolgreich', currentUser?.email || email);
         if (byId('loginStatus')) byId('loginStatus').textContent = `Anmeldung erfolgreich. Rolle: ${currentRole} · User: ${currentDisplayName || currentUser?.email || email}`;
-        window.location.href = `${rootPath()}konto/`;
+        window.location.href = `${rootPath()}`;
       });
     } else {
       logEvent('WARN', 'Login-Button nicht gefunden');
@@ -1636,11 +1674,24 @@ const Cloud4 = (() => {
           setText('moduleCreateStatus', 'Titel und Kurzbeschreibung sind erforderlich.');
           return;
         }
-        const payload = { title, description, content, topic, user_id: currentUser?.id || null, is_published: true };
+        const payload = {
+          title,
+          description,
+          content,
+          topic,
+          difficulty: 'Grundlagen',
+          user_id: currentUser?.id || null,
+          is_published: true
+        };
         const { data: inserted, error } = await client.from('modules').insert(payload).select('id').single();
         if (error || !inserted?.id) {
           done();
-          setText('moduleCreateStatus', `Erstellen fehlgeschlagen: ${normalizeSupabaseError(error)}`);
+          const errText = normalizeSupabaseError(error);
+          if (errText.toLowerCase().includes('column') && (errText.toLowerCase().includes('title') || errText.toLowerCase().includes('description') || errText.toLowerCase().includes('content'))) {
+            setText('moduleCreateStatus', 'Erstellen fehlgeschlagen: Module-Tabelle ist nicht aktuell. Bitte das neueste SQL vollständig ausführen.');
+          } else {
+            setText('moduleCreateStatus', `Erstellen fehlgeschlagen: ${errText}`);
+          }
           return;
         }
         const sectionRows = [
@@ -1740,6 +1791,7 @@ const Cloud4 = (() => {
       setText('adminStatus', 'Supabase Script konnte nicht geladen werden.');
     }
     bindAuthListener();
+    bindGlobalLogout();
     await safe(loadAuthState);
     await safe(loadMetrics);
     await safe(loadSearchCache);

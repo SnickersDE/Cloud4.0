@@ -64,6 +64,11 @@
             Mein Konto
           </a>
         </div>
+        <div class="nav-item auth-only-link" style="display:none;">
+          <a class="nav-btn" id="navLogoutLink" href="#" onclick="return false;">
+            Abmelden
+          </a>
+        </div>
         <div class="nav-item guest-only-link">
           <a class="nav-btn{{ if eq .RelPermalink "/login/" }} active{{ end }}" id="navLoginLink" href="{{ "login/" | relURL }}">
             Anmelden
@@ -88,6 +93,7 @@
     <a href="{{ "ai-mode/" | relURL }}">AI Mode</a>
     <a href="{{ "vernetzen/" | relURL }}">Vernetzen</a>
     <a href="{{ "konto/" | relURL }}">Mein Konto</a>
+    <a class="auth-only-link" id="mobileLogoutLink" href="#" onclick="return false;" style="display:none;">Abmelden</a>
     <a class="guest-only-link" id="mobileLoginLink" href="{{ "login/" | relURL }}">Anmelden</a>
     <a class="guest-only-link" id="mobileRegisterLink" href="{{ "register/" | relURL }}">Registrieren</a>
   </div>

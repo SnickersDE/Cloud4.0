@@ -139,9 +139,7 @@ function copyLink(e) {
 
 function loadTicker() {
   const track = document.getElementById('liveTickerTrack');
-  const label = document.getElementById('tickerLabel');
   if (!track) return;
-  if (label) label.textContent = 'Cloud';
   const lines = (window.Cloud4 && typeof window.Cloud4.getTickerLines === 'function')
     ? window.Cloud4.getTickerLines()
     : ['Cloud4.0 verbunden', 'Mitschriften laden', 'Suche aktiv'];
