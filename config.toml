@@ -7,8 +7,8 @@ paginate = 12
 [params]
   description = "Cloud4.0 Lernplattform mit Mitschriften, Karteikarten, Quiz und Spiele."
   author = "Cloud4.0 Redaktion"
-  supabaseUrl = "https://icarucmhtlzvzwpzwpgb.supabase.co"
-  supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImljYXJ1Y21odGx6dnp3cHp3cGdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5OTAyOTIsImV4cCI6MjA4MzU2NjI5Mn0.CxAGDpk7HkUfm_5bOl7-0pEsJlLkCtyjswVnElp06A8"
+  supabaseUrl = "https://ygrevrvtukbvmrudznrx.supabase.co"
+  supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlncmV2cnZ0dWtidm1ydWR6bnJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5NTM2NDAsImV4cCI6MjA4OTUyOTY0MH0.KZwTUJDuH56OYSKdOzs9bgRJhMrZclLyNncXNlePRhw"
 
 [taxonomies]
   category = "categories"

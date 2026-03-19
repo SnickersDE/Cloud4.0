@@ -7,12 +7,26 @@ drop function if exists public.search_notes(text, int);
 drop function if exists public.set_updated_at();
 drop function if exists public.is_admin();
 drop function if exists public.is_admin(uuid);
+drop function if exists public.handle_new_user();
+drop function if exists public.sync_admin_role();
+
+drop trigger if exists on_auth_user_created on auth.users;
 
 create table if not exists public.user_roles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   role text not null,
   created_at timestamptz not null default now(),
   constraint user_roles_role_check check (role in ('admin','authenticated'))
+);
+
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text,
+  username text,
+  full_name text,
+  avatar_url text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists public.notes (
@@ -82,6 +96,7 @@ create table if not exists public.decks (
   title text not null,
   theme text,
   user_id uuid references auth.users(id) on delete set null,
+  is_published boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -116,6 +131,7 @@ create table if not exists public.quizzes (
   difficulty text not null default 'Grundlagen',
   time_limit_seconds int,
   user_id uuid references auth.users(id) on delete set null,
+  is_published boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -178,6 +194,7 @@ alter table public.module_pdfs add column if not exists created_at timestamptz d
 
 alter table public.decks add column if not exists theme text;
 alter table public.decks add column if not exists user_id uuid references auth.users(id) on delete set null;
+alter table public.decks add column if not exists is_published boolean default true;
 alter table public.decks add column if not exists created_at timestamptz default now();
 alter table public.decks add column if not exists updated_at timestamptz default now();
 
@@ -196,6 +213,7 @@ alter table public.quizzes add column if not exists module_id uuid references pu
 alter table public.quizzes add column if not exists difficulty text default 'Grundlagen';
 alter table public.quizzes add column if not exists time_limit_seconds int;
 alter table public.quizzes add column if not exists user_id uuid references auth.users(id) on delete set null;
+alter table public.quizzes add column if not exists is_published boolean default true;
 alter table public.quizzes add column if not exists created_at timestamptz default now();
 alter table public.quizzes add column if not exists updated_at timestamptz default now();
 
@@ -211,6 +229,12 @@ alter table public.groups add column if not exists description text default '';
 alter table public.groups add column if not exists owner_id uuid references auth.users(id) on delete set null;
 alter table public.groups add column if not exists created_at timestamptz default now();
 alter table public.groups add column if not exists updated_at timestamptz default now();
+alter table public.profiles add column if not exists email text;
+alter table public.profiles add column if not exists username text;
+alter table public.profiles add column if not exists full_name text;
+alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists created_at timestamptz default now();
+alter table public.profiles add column if not exists updated_at timestamptz default now();
 
 alter table public.user_roles alter column role set not null;
 alter table public.notes alter column title set not null;
@@ -250,6 +274,7 @@ create index if not exists flashcards_deck_id_idx on public.flashcards (deck_id)
 create index if not exists quizzes_created_at_idx on public.quizzes (created_at desc);
 create index if not exists quiz_questions_quiz_id_idx on public.quiz_questions (quiz_id, "order");
 create index if not exists groups_name_idx on public.groups (name);
+create index if not exists profiles_username_idx on public.profiles (username);
 
 create or replace function public.is_admin(check_user_id uuid)
 returns boolean
@@ -283,6 +308,37 @@ set search_path = public
 as $$
 begin
   new.updated_at = now();
+  return new;
+end;
+$$;
+
+create or replace function public.sync_admin_role()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, email, username, full_name)
+  values (
+    new.id,
+    new.email,
+    split_part(coalesce(new.email, ''), '@', 1),
+    split_part(coalesce(new.email, ''), '@', 1)
+  )
+  on conflict (id) do update
+    set email = excluded.email,
+        username = coalesce(public.profiles.username, excluded.username),
+        full_name = coalesce(public.profiles.full_name, excluded.full_name);
+
+  insert into public.user_roles (user_id, role)
+  values (
+    new.id,
+    case when lower(coalesce(new.email, '')) = lower('Florian_97@live.de') then 'admin' else 'authenticated' end
+  )
+  on conflict (user_id) do update
+    set role = case when lower(coalesce(new.email, '')) = lower('Florian_97@live.de') then 'admin' else public.user_roles.role end;
+
   return new;
 end;
 $$;
@@ -335,7 +391,17 @@ create trigger groups_set_updated_at
 before update on public.groups
 for each row execute procedure public.set_updated_at();
 
+drop trigger if exists profiles_set_updated_at on public.profiles;
+create trigger profiles_set_updated_at
+before update on public.profiles
+for each row execute procedure public.set_updated_at();
+
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute procedure public.sync_admin_role();
+
 alter table public.user_roles enable row level security;
+alter table public.profiles enable row level security;
 alter table public.notes enable row level security;
 alter table public.note_sections enable row level security;
 alter table public.search_words enable row level security;
@@ -372,6 +438,15 @@ with check (public.is_admin());
 create policy "user_roles_delete_admin_only" on public.user_roles
 for delete
 using (public.is_admin());
+
+drop policy if exists "profiles_select_public" on public.profiles;
+drop policy if exists "profiles_insert_own_or_admin" on public.profiles;
+drop policy if exists "profiles_update_own_or_admin" on public.profiles;
+drop policy if exists "profiles_delete_own_or_admin" on public.profiles;
+create policy "profiles_select_public" on public.profiles for select using (true);
+create policy "profiles_insert_own_or_admin" on public.profiles for insert with check (id = auth.uid() or public.is_admin());
+create policy "profiles_update_own_or_admin" on public.profiles for update using (id = auth.uid() or public.is_admin()) with check (id = auth.uid() or public.is_admin());
+create policy "profiles_delete_own_or_admin" on public.profiles for delete using (id = auth.uid() or public.is_admin());
 
 drop policy if exists "notes_select_public_or_admin" on public.notes;
 drop policy if exists "notes_insert_admin_only" on public.notes;
@@ -473,16 +548,16 @@ drop policy if exists "module_sections_insert_auth_or_admin" on public.module_se
 drop policy if exists "module_sections_update_auth_or_admin" on public.module_sections;
 drop policy if exists "module_sections_delete_auth_or_admin" on public.module_sections;
 create policy "module_sections_select_public_or_auth" on public.module_sections for select using (exists(select 1 from public.modules m where m.id = module_sections.module_id and (m.is_published = true or auth.uid() is not null or public.is_admin())));
-create policy "module_sections_insert_auth_or_admin" on public.module_sections for insert with check (auth.uid() is not null or public.is_admin());
-create policy "module_sections_update_auth_or_admin" on public.module_sections for update using (auth.uid() is not null or public.is_admin()) with check (auth.uid() is not null or public.is_admin());
-create policy "module_sections_delete_auth_or_admin" on public.module_sections for delete using (auth.uid() is not null or public.is_admin());
+create policy "module_sections_insert_auth_or_admin" on public.module_sections for insert with check (exists(select 1 from public.modules m where m.id = module_sections.module_id and (m.user_id = auth.uid() or public.is_admin())));
+create policy "module_sections_update_auth_or_admin" on public.module_sections for update using (exists(select 1 from public.modules m where m.id = module_sections.module_id and (m.user_id = auth.uid() or public.is_admin()))) with check (exists(select 1 from public.modules m where m.id = module_sections.module_id and (m.user_id = auth.uid() or public.is_admin())));
+create policy "module_sections_delete_auth_or_admin" on public.module_sections for delete using (exists(select 1 from public.modules m where m.id = module_sections.module_id and (m.user_id = auth.uid() or public.is_admin())));
 
 drop policy if exists "module_pdfs_select_public_or_auth" on public.module_pdfs;
 drop policy if exists "module_pdfs_insert_auth_or_admin" on public.module_pdfs;
 drop policy if exists "module_pdfs_delete_owner_or_admin" on public.module_pdfs;
 create policy "module_pdfs_select_public_or_auth" on public.module_pdfs for select using (exists(select 1 from public.modules m where m.id = module_pdfs.module_id and (m.is_published = true or auth.uid() is not null or public.is_admin())));
-create policy "module_pdfs_insert_auth_or_admin" on public.module_pdfs for insert with check (auth.uid() is not null or public.is_admin());
-create policy "module_pdfs_delete_owner_or_admin" on public.module_pdfs for delete using (public.is_admin() or user_id = auth.uid());
+create policy "module_pdfs_insert_auth_or_admin" on public.module_pdfs for insert with check (exists(select 1 from public.modules m where m.id = module_pdfs.module_id and (m.user_id = auth.uid() or public.is_admin())));
+create policy "module_pdfs_delete_owner_or_admin" on public.module_pdfs for delete using (public.is_admin() or user_id = auth.uid() or exists(select 1 from public.modules m where m.id = module_pdfs.module_id and m.user_id = auth.uid()));
 
 drop policy if exists "decks_select_public_or_auth" on public.decks;
 drop policy if exists "decks_insert_auth" on public.decks;
@@ -497,10 +572,10 @@ drop policy if exists "flashcards_select_public_or_auth" on public.flashcards;
 drop policy if exists "flashcards_insert_auth_or_admin" on public.flashcards;
 drop policy if exists "flashcards_update_auth_or_admin" on public.flashcards;
 drop policy if exists "flashcards_delete_auth_or_admin" on public.flashcards;
-create policy "flashcards_select_public_or_auth" on public.flashcards for select using (exists(select 1 from public.decks d where d.id = flashcards.deck_id and (d.user_id = auth.uid() or auth.uid() is not null or public.is_admin())));
-create policy "flashcards_insert_auth_or_admin" on public.flashcards for insert with check (auth.uid() is not null or public.is_admin());
-create policy "flashcards_update_auth_or_admin" on public.flashcards for update using (auth.uid() is not null or public.is_admin()) with check (auth.uid() is not null or public.is_admin());
-create policy "flashcards_delete_auth_or_admin" on public.flashcards for delete using (auth.uid() is not null or public.is_admin());
+create policy "flashcards_select_public_or_auth" on public.flashcards for select using (exists(select 1 from public.decks d where d.id = flashcards.deck_id and (d.is_published = true or d.user_id = auth.uid() or public.is_admin())));
+create policy "flashcards_insert_auth_or_admin" on public.flashcards for insert with check (exists(select 1 from public.decks d where d.id = flashcards.deck_id and (d.user_id = auth.uid() or public.is_admin())));
+create policy "flashcards_update_auth_or_admin" on public.flashcards for update using (exists(select 1 from public.decks d where d.id = flashcards.deck_id and (d.user_id = auth.uid() or public.is_admin()))) with check (exists(select 1 from public.decks d where d.id = flashcards.deck_id and (d.user_id = auth.uid() or public.is_admin())));
+create policy "flashcards_delete_auth_or_admin" on public.flashcards for delete using (exists(select 1 from public.decks d where d.id = flashcards.deck_id and (d.user_id = auth.uid() or public.is_admin())));
 
 drop policy if exists "deck_repetitions_select_own_or_admin" on public.deck_repetitions;
 drop policy if exists "deck_repetitions_insert_own_or_admin" on public.deck_repetitions;
@@ -515,7 +590,7 @@ drop policy if exists "quizzes_select_public_or_auth" on public.quizzes;
 drop policy if exists "quizzes_insert_auth" on public.quizzes;
 drop policy if exists "quizzes_update_owner_or_admin" on public.quizzes;
 drop policy if exists "quizzes_delete_owner_or_admin" on public.quizzes;
-create policy "quizzes_select_public_or_auth" on public.quizzes for select using (auth.uid() is not null or public.is_admin());
+create policy "quizzes_select_public_or_auth" on public.quizzes for select using (is_published = true or user_id = auth.uid() or public.is_admin());
 create policy "quizzes_insert_auth" on public.quizzes for insert with check (auth.uid() is not null);
 create policy "quizzes_update_owner_or_admin" on public.quizzes for update using (public.is_admin() or user_id = auth.uid()) with check (public.is_admin() or user_id = auth.uid());
 create policy "quizzes_delete_owner_or_admin" on public.quizzes for delete using (public.is_admin() or user_id = auth.uid());
@@ -524,10 +599,10 @@ drop policy if exists "quiz_questions_select_public_or_auth" on public.quiz_ques
 drop policy if exists "quiz_questions_insert_auth_or_admin" on public.quiz_questions;
 drop policy if exists "quiz_questions_update_auth_or_admin" on public.quiz_questions;
 drop policy if exists "quiz_questions_delete_auth_or_admin" on public.quiz_questions;
-create policy "quiz_questions_select_public_or_auth" on public.quiz_questions for select using (exists(select 1 from public.quizzes q where q.id = quiz_questions.quiz_id and (q.user_id = auth.uid() or auth.uid() is not null or public.is_admin())));
-create policy "quiz_questions_insert_auth_or_admin" on public.quiz_questions for insert with check (auth.uid() is not null or public.is_admin());
-create policy "quiz_questions_update_auth_or_admin" on public.quiz_questions for update using (auth.uid() is not null or public.is_admin()) with check (auth.uid() is not null or public.is_admin());
-create policy "quiz_questions_delete_auth_or_admin" on public.quiz_questions for delete using (auth.uid() is not null or public.is_admin());
+create policy "quiz_questions_select_public_or_auth" on public.quiz_questions for select using (exists(select 1 from public.quizzes q where q.id = quiz_questions.quiz_id and (q.is_published = true or q.user_id = auth.uid() or public.is_admin())));
+create policy "quiz_questions_insert_auth_or_admin" on public.quiz_questions for insert with check (exists(select 1 from public.quizzes q where q.id = quiz_questions.quiz_id and (q.user_id = auth.uid() or public.is_admin())));
+create policy "quiz_questions_update_auth_or_admin" on public.quiz_questions for update using (exists(select 1 from public.quizzes q where q.id = quiz_questions.quiz_id and (q.user_id = auth.uid() or public.is_admin()))) with check (exists(select 1 from public.quizzes q where q.id = quiz_questions.quiz_id and (q.user_id = auth.uid() or public.is_admin())));
+create policy "quiz_questions_delete_auth_or_admin" on public.quiz_questions for delete using (exists(select 1 from public.quizzes q where q.id = quiz_questions.quiz_id and (q.user_id = auth.uid() or public.is_admin())));
 
 drop policy if exists "groups_select_auth_or_admin" on public.groups;
 drop policy if exists "groups_insert_auth" on public.groups;
@@ -589,6 +664,7 @@ revoke all on schema public from public;
 grant usage on schema public to anon, authenticated;
 
 revoke all on public.user_roles from anon, authenticated;
+revoke all on public.profiles from anon, authenticated;
 revoke all on public.notes from anon, authenticated;
 revoke all on public.note_sections from anon, authenticated;
 revoke all on public.search_words from anon, authenticated;
@@ -605,7 +681,8 @@ revoke all on public.groups from anon, authenticated;
 grant select on public.notes, public.note_sections, public.search_words to anon;
 grant select, insert, update, delete on public.user_roles, public.notes, public.note_sections, public.search_words to authenticated;
 grant select on public.modules, public.module_sections, public.module_pdfs, public.decks, public.flashcards, public.quizzes, public.quiz_questions, public.groups to anon;
-grant select, insert, update, delete on public.modules, public.module_sections, public.module_pdfs, public.decks, public.flashcards, public.deck_repetitions, public.quizzes, public.quiz_questions, public.groups to authenticated;
+grant select on public.profiles to anon;
+grant select, insert, update, delete on public.profiles, public.modules, public.module_sections, public.module_pdfs, public.decks, public.flashcards, public.deck_repetitions, public.quizzes, public.quiz_questions, public.groups to authenticated;
 
 revoke all on function public.search_notes(text, int) from public;
 grant execute on function public.search_notes(text, int) to anon, authenticated;

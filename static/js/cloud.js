@@ -97,6 +97,14 @@ const Cloud4 = (() => {
     return msg;
   }
 
+  const isAuthenticatedUser = () => Boolean(currentUser?.id);
+  const ensureWriteAccess = (statusElementId, message = 'Bitte anmelden, um Inhalte zu bearbeiten.') => {
+    if (isAuthenticatedUser()) return true;
+    setText(statusElementId, message);
+    logEvent('WARN', 'Write action blocked (not authenticated)');
+    return false;
+  };
+
   function bindAuthListener() {
     const client = createSupabase();
     if (!client || authSubscription) return;
@@ -318,6 +326,7 @@ const Cloud4 = (() => {
     if (!client) return;
     const { data } = await client.from(tableName).select('*').order('created_at', { ascending: false }).limit(24);
     const rows = data || [];
+    grid.innerHTML = '';
     rows.forEach((row) => {
       const card = document.createElement('div');
       const link = resolveCollectionLink(tableName, row);
@@ -409,6 +418,8 @@ const Cloud4 = (() => {
       }
       sectionsGrid.querySelectorAll('.module-section-save').forEach((btn) => {
         btn.addEventListener('click', async () => {
+          if (!ensureWriteAccess('moduleEditorMeta')) return;
+          logEvent('INFO', 'Module section save clicked', btn.dataset.id);
           const done = setBusy(btn, 'Speichert…');
           const sectionId = btn.dataset.id;
           const textarea = sectionsGrid.querySelector(`.module-section-content[data-id="${sectionId}"]`);
@@ -431,6 +442,8 @@ const Cloud4 = (() => {
       pdfList.innerHTML = (pdfs || []).map((pdf, idx) => `${String(idx + 1).padStart(2, '0')} <a href="${esc(pdf.url)}" target="_blank" rel="noopener noreferrer">${esc(pdf.name || 'PDF')}</a>`).join('<br>') || 'Keine PDFs';
       if (pdfAddBtn) {
         pdfAddBtn.onclick = async () => {
+          if (!ensureWriteAccess('moduleEditorMeta')) return;
+          logEvent('INFO', 'Module PDF add clicked', moduleId);
           const done = setBusy(pdfAddBtn, 'Speichert…');
           const name = pdfNameInput?.value?.trim() || '';
           const url = pdfUrlInput?.value?.trim() || '';
@@ -500,6 +513,8 @@ const Cloud4 = (() => {
     if (statsBox) statsBox.innerHTML = `Known ${known}<br>Unknown ${unknown}`;
     cardsGrid.querySelectorAll('.flashcard-save').forEach((btn) => {
       btn.addEventListener('click', async () => {
+        if (!ensureWriteAccess('deckDetailMeta')) return;
+        logEvent('INFO', 'Flashcard save clicked', btn.dataset.id);
         const done = setBusy(btn, 'Speichert…');
         const cardId = btn.dataset.id;
         const back = cardsGrid.querySelector(`.flashcard-back[data-id="${cardId}"]`)?.value || '';
@@ -514,6 +529,8 @@ const Cloud4 = (() => {
     });
     cardsGrid.querySelectorAll('.flashcard-delete').forEach((btn) => {
       btn.addEventListener('click', async () => {
+        if (!ensureWriteAccess('deckDetailMeta')) return;
+        logEvent('INFO', 'Flashcard delete clicked', btn.dataset.id);
         const done = setBusy(btn, 'Löscht…');
         const cardId = btn.dataset.id;
         const { error: deleteError } = await client.from('flashcards').delete().eq('id', cardId);
@@ -526,6 +543,8 @@ const Cloud4 = (() => {
       });
     });
     addBtn.onclick = async () => {
+      if (!ensureWriteAccess('deckDetailMeta')) return;
+      logEvent('INFO', 'Flashcard add clicked', deckId);
       const done = setBusy(addBtn, 'Erstellt…');
       const front = byId('newFlashcardFront')?.value?.trim() || '';
       const back = byId('newFlashcardBack')?.value?.trim() || '';
@@ -595,6 +614,8 @@ const Cloud4 = (() => {
     if (statsBox) statsBox.innerHTML = `${quiz.difficulty || 'Quiz'}<br>${(questions || []).length} Fragen`;
     questionsGrid.querySelectorAll('.quiz-question-save').forEach((btn) => {
       btn.addEventListener('click', async () => {
+        if (!ensureWriteAccess('quizDetailMeta')) return;
+        logEvent('INFO', 'Quiz question save clicked', btn.dataset.id);
         const done = setBusy(btn, 'Speichert…');
         const id = btn.dataset.id;
         const question = questionsGrid.querySelector(`.quiz-question-text[data-id="${id}"]`)?.value || '';
@@ -613,6 +634,8 @@ const Cloud4 = (() => {
     });
     questionsGrid.querySelectorAll('.quiz-question-delete').forEach((btn) => {
       btn.addEventListener('click', async () => {
+        if (!ensureWriteAccess('quizDetailMeta')) return;
+        logEvent('INFO', 'Quiz question delete clicked', btn.dataset.id);
         const done = setBusy(btn, 'Löscht…');
         const id = btn.dataset.id;
         const { error: deleteError } = await client.from('quiz_questions').delete().eq('id', id);
@@ -625,6 +648,8 @@ const Cloud4 = (() => {
       });
     });
     addBtn.onclick = async () => {
+      if (!ensureWriteAccess('quizDetailMeta')) return;
+      logEvent('INFO', 'Quiz question add clicked', quizId);
       const done = setBusy(addBtn, 'Erstellt…');
       const question = byId('newQuizQuestion')?.value?.trim() || '';
       const optionsText = byId('newQuizOptions')?.value?.trim() || '';
@@ -664,6 +689,8 @@ const Cloud4 = (() => {
     setText('networkDetailMeta', 'Freunde, Gruppen und gemeinsames Arbeiten');
     if (statsBox) statsBox.innerHTML = `${friendsGrid?.children.length || 0} Friends<br>${groupsGrid?.children.length || 0} Groups`;
     createBtn.onclick = async () => {
+      if (!ensureWriteAccess('networkDetailMeta')) return;
+      logEvent('INFO', 'Create group clicked');
       const done = setBusy(createBtn, 'Erstellt…');
       const name = byId('newGroupName')?.value?.trim() || '';
       const description = byId('newGroupDescription')?.value?.trim() || '';
@@ -732,6 +759,22 @@ const Cloud4 = (() => {
     if (byId('accountMail')) byId('accountMail').textContent = user.email || '';
     if (byId('accountMeta')) byId('accountMeta').textContent = `Rolle: ${currentRole}`;
     if (byId('accountAvatar')) byId('accountAvatar').innerHTML = profile?.avatar_url ? `<img src="${esc(profile.avatar_url)}" alt="Avatar" style="width:100%;height:100%;object-fit:cover;">` : 'Profil';
+    const logoutBtn = byId('accountLogoutBtn');
+    if (logoutBtn) {
+      logoutBtn.onclick = async () => {
+        const done = setBusy(logoutBtn, 'Logout…');
+        const { error } = await client.auth.signOut();
+        done();
+        if (error) {
+          setText('accountLogoutStatus', `Logout fehlgeschlagen: ${normalizeSupabaseError(error)}`);
+          logEvent('ERROR', 'Logout failed', normalizeSupabaseError(error));
+          return;
+        }
+        setText('accountLogoutStatus', 'Erfolgreich ausgeloggt.');
+        logEvent('INFO', 'Logout successful', user.email || user.id);
+        window.location.href = `${rootPath()}login/`;
+      };
+    }
     const { data: notes } = await client.from('notes').select('id,title,teaser').eq('author_id', user.id).order('created_at', { ascending: false }).limit(24);
     const grid = byId('accountNotesGrid');
     if (grid) {
@@ -1305,6 +1348,95 @@ const Cloud4 = (() => {
     }
   }
 
+  async function setupCreateWorkspaces() {
+    const client = await ensureSupabaseClient();
+    if (!client) return;
+    const createModuleBtn = byId('createModuleBtn');
+    if (createModuleBtn) {
+      createModuleBtn.onclick = async () => {
+        if (!ensureWriteAccess('moduleCreateStatus')) return;
+        logEvent('INFO', 'Create module clicked');
+        const done = setBusy(createModuleBtn, 'Erstellt…');
+        const title = byId('newModuleTitle')?.value?.trim() || '';
+        const description = byId('newModuleDescription')?.value?.trim() || '';
+        const content = byId('newModuleContent')?.value?.trim() || '';
+        const topic = byId('newModuleTopic')?.value?.trim() || '';
+        if (!title || !description) {
+          done();
+          setText('moduleCreateStatus', 'Titel und Kurzbeschreibung sind erforderlich.');
+          return;
+        }
+        const payload = { title, description, content, topic, user_id: currentUser?.id || null, is_published: true };
+        const { data: inserted, error } = await client.from('modules').insert(payload).select('id').single();
+        done();
+        if (error || !inserted?.id) {
+          setText('moduleCreateStatus', `Erstellen fehlgeschlagen: ${normalizeSupabaseError(error)}`);
+          return;
+        }
+        await client.from('module_sections').insert({ module_id: inserted.id, type: 'schwerpunkte', title: 'Schwerpunkte', content: content || description });
+        setText('moduleCreateStatus', 'Modul erstellt.');
+        byId('newModuleTitle').value = '';
+        byId('newModuleDescription').value = '';
+        byId('newModuleContent').value = '';
+        byId('newModuleTopic').value = '';
+        await renderCollection('modules', 'moduleGrid', 'moduleHighlights');
+      };
+    }
+    const createDeckBtn = byId('createDeckBtn');
+    if (createDeckBtn) {
+      createDeckBtn.onclick = async () => {
+        if (!ensureWriteAccess('deckCreateStatus')) return;
+        logEvent('INFO', 'Create deck clicked');
+        const done = setBusy(createDeckBtn, 'Erstellt…');
+        const title = byId('newDeckTitle')?.value?.trim() || '';
+        const theme = byId('newDeckTheme')?.value?.trim() || '';
+        if (!title) {
+          done();
+          setText('deckCreateStatus', 'Deck Titel ist erforderlich.');
+          return;
+        }
+        const { error } = await client.from('decks').insert({ title, theme, user_id: currentUser?.id || null, is_published: true });
+        done();
+        if (error) {
+          setText('deckCreateStatus', `Erstellen fehlgeschlagen: ${normalizeSupabaseError(error)}`);
+          return;
+        }
+        setText('deckCreateStatus', 'Deck erstellt.');
+        byId('newDeckTitle').value = '';
+        byId('newDeckTheme').value = '';
+        await renderCollection('decks', 'deckGrid', 'deckHighlights', 'title', 'theme');
+      };
+    }
+    const createQuizBtn = byId('createQuizBtn');
+    if (createQuizBtn) {
+      createQuizBtn.onclick = async () => {
+        if (!ensureWriteAccess('quizCreateStatus')) return;
+        logEvent('INFO', 'Create quiz clicked');
+        const done = setBusy(createQuizBtn, 'Erstellt…');
+        const title = byId('newQuizTitle')?.value?.trim() || '';
+        const description = byId('newQuizDescription')?.value?.trim() || '';
+        const difficulty = byId('newQuizDifficulty')?.value?.trim() || 'Grundlagen';
+        if (!title) {
+          done();
+          setText('quizCreateStatus', 'Quiz Titel ist erforderlich.');
+          return;
+        }
+        const payload = { title, description, difficulty, user_id: currentUser?.id || null, is_published: true };
+        const { error } = await client.from('quizzes').insert(payload);
+        done();
+        if (error) {
+          setText('quizCreateStatus', `Erstellen fehlgeschlagen: ${normalizeSupabaseError(error)}`);
+          return;
+        }
+        setText('quizCreateStatus', 'Quiz erstellt.');
+        byId('newQuizTitle').value = '';
+        byId('newQuizDescription').value = '';
+        byId('newQuizDifficulty').value = '';
+        await renderCollection('quizzes', 'quizGrid', 'quizHighlights');
+      };
+    }
+  }
+
   async function boot() {
     installRuntimeErrorHandlers();
     logEvent('INFO', 'Cloud4 boot gestartet');
@@ -1341,6 +1473,7 @@ const Cloud4 = (() => {
     await safe(renderMitschrift);
     await safe(setupAdminPage);
     await safe(setupAuthPages);
+    await safe(setupCreateWorkspaces);
   }
 
   return {

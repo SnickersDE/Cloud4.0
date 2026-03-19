@@ -20,6 +20,18 @@
   </div>
   <div class="support-qr" id="deckStatsBox">DECK</div>
 </div>
+<div class="container"><div class="section-label">Neues Deck erstellen</div></div>
+<div class="support-wrap" id="deckCreateBox">
+  <div style="width:100%;">
+    <div class="nl-form" style="display:block;">
+      <input class="nl-input" id="newDeckTitle" type="text" placeholder="Deck Titel" style="width:100%;border-right:1px solid #333;margin-bottom:8px;"/>
+      <input class="nl-input" id="newDeckTheme" type="text" placeholder="Thema" style="width:100%;border-right:1px solid #333;margin-bottom:8px;"/>
+      <button class="nl-btn" id="createDeckBtn" type="button">Deck erstellen</button>
+    </div>
+    <p class="author-text" id="deckCreateStatus"></p>
+  </div>
+  <div class="support-qr">CREATE</div>
+</div>
 <div class="container"><div class="section-label">Decks</div></div>
 <div class="main-grid" id="deckGrid"></div>
 {{ end }}
