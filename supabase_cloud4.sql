@@ -142,6 +142,76 @@ create table if not exists public.groups (
   updated_at timestamptz not null default now()
 );
 
+alter table public.notes add column if not exists teaser text default '';
+alter table public.notes add column if not exists body text default '';
+alter table public.notes add column if not exists category text default 'Mitschrift';
+alter table public.notes add column if not exists image_path text;
+alter table public.notes add column if not exists author_id uuid references auth.users(id) on delete set null;
+alter table public.notes add column if not exists is_published boolean default true;
+alter table public.notes add column if not exists created_at timestamptz default now();
+alter table public.notes add column if not exists updated_at timestamptz default now();
+
+alter table public.modules add column if not exists description text default '';
+alter table public.modules add column if not exists content text default '';
+alter table public.modules add column if not exists topic text;
+alter table public.modules add column if not exists difficulty text default 'Grundlagen';
+alter table public.modules add column if not exists user_id uuid references auth.users(id) on delete set null;
+alter table public.modules add column if not exists is_published boolean default true;
+alter table public.modules add column if not exists created_at timestamptz default now();
+alter table public.modules add column if not exists updated_at timestamptz default now();
+
+alter table public.note_sections add column if not exists order_index int default 1;
+alter table public.note_sections add column if not exists created_at timestamptz default now();
+alter table public.note_sections add column if not exists updated_at timestamptz default now();
+alter table public.search_words add column if not exists created_at timestamptz default now();
+
+alter table public.module_sections add column if not exists type text default 'schwerpunkte';
+alter table public.module_sections add column if not exists title text default 'Abschnitt';
+alter table public.module_sections add column if not exists content text default '';
+alter table public.module_sections add column if not exists created_at timestamptz default now();
+alter table public.module_sections add column if not exists updated_at timestamptz default now();
+
+alter table public.module_pdfs add column if not exists user_id uuid references auth.users(id) on delete set null;
+alter table public.module_pdfs add column if not exists name text;
+alter table public.module_pdfs add column if not exists url text;
+alter table public.module_pdfs add column if not exists created_at timestamptz default now();
+
+alter table public.decks add column if not exists theme text;
+alter table public.decks add column if not exists user_id uuid references auth.users(id) on delete set null;
+alter table public.decks add column if not exists created_at timestamptz default now();
+alter table public.decks add column if not exists updated_at timestamptz default now();
+
+alter table public.flashcards add column if not exists status text default 'new';
+alter table public.flashcards add column if not exists created_at timestamptz default now();
+alter table public.flashcards add column if not exists updated_at timestamptz default now();
+
+alter table public.deck_repetitions add column if not exists repetition_count int default 0;
+alter table public.deck_repetitions add column if not exists last_known_count int default 0;
+alter table public.deck_repetitions add column if not exists last_unknown_count int default 0;
+alter table public.deck_repetitions add column if not exists created_at timestamptz default now();
+alter table public.deck_repetitions add column if not exists updated_at timestamptz default now();
+
+alter table public.quizzes add column if not exists description text default '';
+alter table public.quizzes add column if not exists module_id uuid references public.modules(id) on delete set null;
+alter table public.quizzes add column if not exists difficulty text default 'Grundlagen';
+alter table public.quizzes add column if not exists time_limit_seconds int;
+alter table public.quizzes add column if not exists user_id uuid references auth.users(id) on delete set null;
+alter table public.quizzes add column if not exists created_at timestamptz default now();
+alter table public.quizzes add column if not exists updated_at timestamptz default now();
+
+alter table public.quiz_questions add column if not exists type text default 'multiple_choice';
+alter table public.quiz_questions add column if not exists options jsonb default '[]'::jsonb;
+alter table public.quiz_questions add column if not exists correct_answer jsonb default '[0]'::jsonb;
+alter table public.quiz_questions add column if not exists feedback text default '';
+alter table public.quiz_questions add column if not exists "order" int default 0;
+alter table public.quiz_questions add column if not exists created_at timestamptz default now();
+alter table public.quiz_questions add column if not exists updated_at timestamptz default now();
+
+alter table public.groups add column if not exists description text default '';
+alter table public.groups add column if not exists owner_id uuid references auth.users(id) on delete set null;
+alter table public.groups add column if not exists created_at timestamptz default now();
+alter table public.groups add column if not exists updated_at timestamptz default now();
+
 alter table public.user_roles alter column role set not null;
 alter table public.notes alter column title set not null;
 alter table public.notes alter column teaser set not null;
