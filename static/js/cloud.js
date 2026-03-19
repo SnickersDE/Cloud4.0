@@ -8,12 +8,14 @@ const Cloud4 = (() => {
   let adminWordsByNote = new Map();
   let adminPage = 1;
   const adminPageSize = 10;
+  let authSubscription = null;
 
   const rootPath = () => window.__SITE_ROOT__ || '/';
   const byId = (id) => document.getElementById(id);
   const toText = (value) => String(value || '');
   const esc = (value) => toText(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
   const dateLabel = (value) => new Date(value || Date.now()).toLocaleDateString('de-DE');
+  const isConfigured = () => Boolean((window.__SUPABASE_URL__ || '').trim() && (window.__SUPABASE_ANON_KEY__ || '').trim());
   const setText = (id, text) => {
     const el = byId(id);
     if (el) el.textContent = text;
@@ -31,12 +33,55 @@ const Cloud4 = (() => {
   };
 
   function createSupabase() {
-    if (!window.supabase || supabaseClient) return supabaseClient;
+    if (supabaseClient) return supabaseClient;
+    if (!window.supabase) return null;
     const url = (window.__SUPABASE_URL__ || '').trim();
     const key = (window.__SUPABASE_ANON_KEY__ || '').trim();
     if (!url || !key) return null;
-    supabaseClient = window.supabase.createClient(url, key);
+    supabaseClient = window.supabase.createClient(url, key, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce'
+      }
+    });
     return supabaseClient;
+  }
+
+  async function ensureSupabaseClient(maxWaitMs = 2500) {
+    const start = Date.now();
+    while (Date.now() - start < maxWaitMs) {
+      const client = createSupabase();
+      if (client) return client;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return null;
+  }
+
+  function normalizeSupabaseError(error) {
+    if (!error) return 'Unbekannter Fehler';
+    const msg = toText(error.message || error.error_description || error.hint || error.details);
+    if (!msg) return 'Unbekannter Fehler';
+    if (msg.toLowerCase().includes('invalid login credentials')) return 'Ungültige E-Mail oder Passwort.';
+    if (msg.toLowerCase().includes('email not confirmed')) return 'E-Mail ist noch nicht bestätigt.';
+    if (msg.toLowerCase().includes('network')) return 'Netzwerkfehler. Bitte Verbindung prüfen.';
+    return msg;
+  }
+
+  function bindAuthListener() {
+    const client = createSupabase();
+    if (!client || authSubscription) return;
+    const { data } = client.auth.onAuthStateChange(async () => {
+      await loadAuthState();
+      await loadMetrics();
+      await renderKonto();
+      if (byId('adminStatus') && currentRole === 'admin') {
+        await renderAdminNotes(true);
+        await renderAdminWords();
+      }
+    });
+    authSubscription = data?.subscription || null;
   }
 
   async function loadAuthState() {
@@ -193,6 +238,17 @@ const Cloud4 = (() => {
     return `<div class="card" onclick="window.location.href='${esc(link)}'"><div class="card-body"><div class="card-title">${esc(title)}</div><div class="card-excerpt">${esc(subtitle || '')}</div></div></div>`;
   }
 
+  function resolveCollectionLink(tableName, row) {
+    if (row?.url) return row.url;
+    if (row?.slug) return `${rootPath()}${tableName}/?slug=${encodeURIComponent(row.slug)}`;
+    if (!row?.id) return '#';
+    if (tableName === 'modules') return `${rootPath()}zusammenfassungen/?id=${encodeURIComponent(row.id)}`;
+    if (tableName === 'decks') return `${rootPath()}karteikarten/?id=${encodeURIComponent(row.id)}`;
+    if (tableName === 'quizzes') return `${rootPath()}quiz/?id=${encodeURIComponent(row.id)}`;
+    if (tableName === 'documents') return `${rootPath()}ai-mode/?id=${encodeURIComponent(row.id)}`;
+    return '#';
+  }
+
   async function renderSpiele() {
     const grid = byId('spieleGrid');
     if (!grid) return;
@@ -235,13 +291,50 @@ const Cloud4 = (() => {
     const rows = data || [];
     rows.forEach((row) => {
       const card = document.createElement('div');
-      card.innerHTML = cardHtml(row[titleField] || 'Eintrag', row[subtitleField] || '', '#');
+      const link = resolveCollectionLink(tableName, row);
+      card.innerHTML = cardHtml(row[titleField] || 'Eintrag', row[subtitleField] || '', link);
       grid.appendChild(card.firstChild);
     });
     const hi = byId(highlightId);
     if (hi) {
       hi.innerHTML = rows.slice(0, 4).map((row, idx) => `<div class="hot-side"><div class="hs-num">${String(idx + 1).padStart(2, '0')}</div><div class="hs-title">${esc(row[titleField] || '')}</div><div class="hs-meta">${esc(row[subtitleField] || '')}</div></div>`).join('');
     }
+  }
+
+  async function renderModuleDetail() {
+    const detailBox = byId('moduleDetail');
+    if (!detailBox) return;
+    const moduleId = new URLSearchParams(window.location.search).get('id');
+    if (!moduleId) {
+      detailBox.style.display = 'none';
+      detailBox.innerHTML = '';
+      return;
+    }
+    const client = createSupabase();
+    if (!client) {
+      detailBox.style.display = '';
+      detailBox.innerHTML = '<div class="wb-title">Supabase nicht verfügbar</div><p class="author-text">Bitte Verbindung prüfen.</p>';
+      return;
+    }
+    const { data: moduleRow, error } = await client
+      .from('modules')
+      .select('*')
+      .eq('id', moduleId)
+      .maybeSingle();
+    if (error || !moduleRow) {
+      detailBox.style.display = '';
+      detailBox.innerHTML = `<div class="wb-title">Modul nicht gefunden</div><p class="author-text">${esc(normalizeSupabaseError(error))}</p>`;
+      return;
+    }
+    detailBox.style.display = '';
+    detailBox.innerHTML = `
+      <div>
+        <div class="wb-title">${esc(moduleRow.title || 'Modul')}</div>
+        <p class="author-text">${esc(moduleRow.description || '')}</p>
+        <p class="author-text">${esc(moduleRow.content || moduleRow.summary || '')}</p>
+      </div>
+      <div class="support-qr">${esc(moduleRow.topic || 'MODUL')}</div>
+    `;
   }
 
   async function renderVernetzen() {
@@ -633,9 +726,9 @@ const Cloud4 = (() => {
 
   async function setupAdminPage() {
     if (!byId('adminStatus')) return;
-    const client = createSupabase();
+    const client = await ensureSupabaseClient();
     if (!client) {
-      byId('adminStatus').textContent = 'Supabase URL oder Key fehlt in config.toml.';
+      byId('adminStatus').textContent = 'Supabase-Verbindung fehlt. URL/Key oder Netzverbindung prüfen.';
       return;
     }
     const loginBtn = byId('adminLoginBtn');
@@ -647,10 +740,15 @@ const Cloud4 = (() => {
         const done = setBusy(loginBtn, 'Lädt…');
         const email = byId('adminEmail')?.value || '';
         const password = byId('adminPassword')?.value || '';
+        if (!email.trim() || !password.trim()) {
+          done();
+          byId('adminStatus').textContent = 'Bitte E-Mail und Passwort eingeben.';
+          return;
+        }
         const { error } = await client.auth.signInWithPassword({ email, password });
         done();
         if (error) {
-          byId('adminStatus').textContent = `Login fehlgeschlagen: ${error.message}`;
+          byId('adminStatus').textContent = `Login fehlgeschlagen: ${normalizeSupabaseError(error)}`;
           return;
         }
         await loadAuthState();
@@ -760,18 +858,31 @@ const Cloud4 = (() => {
   }
 
   async function setupAuthPages() {
-    const client = createSupabase();
-    if (!client) return;
+    const client = await ensureSupabaseClient();
+    if (!client) {
+      if (byId('loginStatus')) byId('loginStatus').textContent = 'Supabase-Verbindung fehlt. Bitte Konfiguration prüfen.';
+      if (byId('registerStatus')) byId('registerStatus').textContent = 'Supabase-Verbindung fehlt. Bitte Konfiguration prüfen.';
+      return;
+    }
     const loginBtn = byId('loginSubmit');
     if (loginBtn) {
       loginBtn.addEventListener('click', async () => {
+        const done = setBusy(loginBtn, 'Prüft…');
         const email = byId('loginEmail')?.value || '';
         const password = byId('loginPassword')?.value || '';
-        const { error } = await client.auth.signInWithPassword({ email, password });
-        if (error) {
-          if (byId('loginStatus')) byId('loginStatus').textContent = `Fehler: ${error.message}`;
+        if (!email.trim() || !password.trim()) {
+          done();
+          if (byId('loginStatus')) byId('loginStatus').textContent = 'Bitte E-Mail und Passwort eingeben.';
           return;
         }
+        const { error } = await client.auth.signInWithPassword({ email, password });
+        if (error) {
+          done();
+          if (byId('loginStatus')) byId('loginStatus').textContent = `Fehler: ${normalizeSupabaseError(error)}`;
+          return;
+        }
+        await loadAuthState();
+        done();
         if (byId('loginStatus')) byId('loginStatus').textContent = 'Anmeldung erfolgreich.';
         window.location.href = `${rootPath()}konto/`;
       });
@@ -779,34 +890,61 @@ const Cloud4 = (() => {
     const registerBtn = byId('registerSubmit');
     if (registerBtn) {
       registerBtn.addEventListener('click', async () => {
+        const done = setBusy(registerBtn, 'Erstellt…');
         const email = byId('registerEmail')?.value || '';
         const password = byId('registerPassword')?.value || '';
-        const { error } = await client.auth.signUp({ email, password });
-        if (error) {
-          if (byId('registerStatus')) byId('registerStatus').textContent = `Fehler: ${error.message}`;
+        if (!email.trim() || !password.trim()) {
+          done();
+          if (byId('registerStatus')) byId('registerStatus').textContent = 'Bitte E-Mail und Passwort eingeben.';
           return;
         }
+        if (password.length < 6) {
+          done();
+          if (byId('registerStatus')) byId('registerStatus').textContent = 'Passwort muss mindestens 6 Zeichen haben.';
+          return;
+        }
+        const { error } = await client.auth.signUp({ email, password });
+        if (error) {
+          done();
+          if (byId('registerStatus')) byId('registerStatus').textContent = `Fehler: ${normalizeSupabaseError(error)}`;
+          return;
+        }
+        done();
         if (byId('registerStatus')) byId('registerStatus').textContent = 'Registrierung erfolgreich. Bitte E-Mail bestätigen.';
       });
     }
   }
 
   async function boot() {
-    createSupabase();
-    await loadAuthState();
-    await loadMetrics();
-    await loadSearchCache();
-    await renderHome();
-    await renderSpiele();
-    await renderCollection('modules', 'moduleGrid', 'moduleHighlights');
-    await renderCollection('decks', 'deckGrid', 'deckHighlights', 'title', 'theme');
-    await renderCollection('quizzes', 'quizGrid', 'quizHighlights');
-    await renderCollection('documents', 'pipelineGrid', '', 'title', 'upload_date');
-    await renderVernetzen();
-    await renderKonto();
-    await renderMitschrift();
-    await setupAdminPage();
-    await setupAuthPages();
+    const safe = async (fn) => {
+      try {
+        await fn();
+      } catch (error) {
+        console.error('Cloud4 init step failed:', error);
+      }
+    };
+    const client = await ensureSupabaseClient();
+    if (!client && isConfigured()) {
+      setText('loginStatus', 'Supabase Script konnte nicht geladen werden.');
+      setText('registerStatus', 'Supabase Script konnte nicht geladen werden.');
+      setText('adminStatus', 'Supabase Script konnte nicht geladen werden.');
+    }
+    bindAuthListener();
+    await safe(loadAuthState);
+    await safe(loadMetrics);
+    await safe(loadSearchCache);
+    await safe(renderHome);
+    await safe(renderSpiele);
+    await safe(() => renderCollection('modules', 'moduleGrid', 'moduleHighlights'));
+    await safe(() => renderCollection('decks', 'deckGrid', 'deckHighlights', 'title', 'theme'));
+    await safe(() => renderCollection('quizzes', 'quizGrid', 'quizHighlights'));
+    await safe(() => renderCollection('documents', 'pipelineGrid', '', 'title', 'upload_date'));
+    await safe(renderModuleDetail);
+    await safe(renderVernetzen);
+    await safe(renderKonto);
+    await safe(renderMitschrift);
+    await safe(setupAdminPage);
+    await safe(setupAuthPages);
   }
 
   return {
