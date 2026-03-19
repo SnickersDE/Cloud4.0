@@ -4,8 +4,6 @@ create extension if not exists "uuid-ossp";
 create extension if not exists pg_trgm;
 
 drop function if exists public.search_notes(text, int);
-drop function if exists public.is_admin();
-drop function if exists public.is_admin(uuid);
 drop function if exists public.handle_new_user();
 drop function if exists public.sync_admin_role();
 
