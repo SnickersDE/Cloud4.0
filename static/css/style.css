@@ -39,14 +39,18 @@ a:hover {
 /* ── TICKER ── */
 .ticker-wrap { background:var(--red); overflow:hidden; height:30px; display:flex; align-items:center; }
 .ticker-label { background:var(--ink); color:#fff; font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:10px; letter-spacing:3px; text-transform:uppercase; padding:0 18px; height:100%; display:flex; align-items:center; white-space:nowrap; flex-shrink:0; }
+.online-badge { display:inline-flex; align-items:center; gap:6px; margin-left:10px; font-size:10px; letter-spacing:1.5px; }
+.online-dot { width:7px; height:7px; border-radius:50%; background:#31d158; box-shadow:0 0 8px rgba(49,209,88,.8); animation:onlinePulse 1.5s ease-in-out infinite; }
 .ticker-track { display:flex; animation:ticker 34s linear infinite; white-space:nowrap; }
 .ticker-track span { font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:12px; color:#fff; padding:0 36px; letter-spacing:.5px; }
 .ticker-track span::after { content:' · '; margin-left:36px; opacity:.4; }
 @keyframes ticker { from { transform:translateX(0) } to { transform:translateX(-50%) } }
+@keyframes onlinePulse { 0%,100% { transform:scale(1); opacity:1; } 50% { transform:scale(.75); opacity:.6; } }
 
 /* ── HEADER ── */
 header { background:var(--header-bg); border-bottom:4px solid var(--ink); transition:background .3s; }
 .header-top { display:flex; align-items:center; justify-content:space-between; padding:30px 48px 24px; gap:24px; }
+.logo-row { display:flex; align-items:center; gap:14px; }
 .logo-eyebrow { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:10px; letter-spacing:4px; text-transform:uppercase; color:var(--red); margin-bottom:6px; }
 .logo { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:64px; color:var(--text); letter-spacing:4px; text-transform:uppercase; text-decoration:none; line-height:.88; display:block; }
 .logo .accent { color:var(--red); }
@@ -91,7 +95,7 @@ nav.scrolled { box-shadow:0 4px 24px rgba(0,0,0,.5); }
 
 /* Hamburger */
 .hamburger { display:flex; background:none; border:none; cursor:pointer; padding:12px; flex-direction:column; gap:5px; }
-.hamburger span { display:block; width:22px; height:2px; background:#fff; transition:transform .2s,opacity .2s; }
+.hamburger span { display:block; width:22px; height:2px; background:var(--text); transition:transform .2s,opacity .2s; }
 .hamburger.open span:nth-child(1) { transform:translateY(7px) rotate(45deg); }
 .hamburger.open span:nth-child(2) { opacity:0; }
 .hamburger.open span:nth-child(3) { transform:translateY(-7px) rotate(-45deg); }

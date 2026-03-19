@@ -1,9 +1,12 @@
 <header>
   <div class="header-top">
-    <div>
+    <div class="logo-row">
       <a class="logo" href="{{ .Site.Home.RelPermalink }}" onclick="window.location.href='{{ .Site.Home.RelPermalink }}'; return false;">
         CLOUD<span class="accent">4.0</span>
       </a>
+      <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Navigation öffnen">
+        <span></span><span></span><span></span>
+      </button>
     </div>
     <div class="header-right">
       <div class="search-wrap">
@@ -73,9 +76,6 @@
         </div>
 
       </div>
-      <button class="hamburger" id="hamburger" onclick="toggleMenu()">
-        <span></span><span></span><span></span>
-      </button>
     </div>
   </nav>
 
