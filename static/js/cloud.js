@@ -335,6 +335,42 @@ const Cloud4 = (() => {
     return '#';
   }
 
+  function moduleSectionBlueprint() {
+    return [
+      { type: 'anfang', title: 'Anfang' },
+      { type: 'hauptteil', title: 'Hauptteil' },
+      { type: 'schluss', title: 'Schluss' }
+    ];
+  }
+
+  async function ensureModuleCoreSections(client, moduleId, fallbackText = '') {
+    const { data: existing } = await client
+      .from('module_sections')
+      .select('id,module_id,type,title,content,created_at,updated_at')
+      .eq('module_id', moduleId);
+    const existingMap = new Map((existing || []).map((row) => [row.type, row]));
+    const missingRows = moduleSectionBlueprint()
+      .filter((entry) => !existingMap.has(entry.type))
+      .map((entry) => ({
+        module_id: moduleId,
+        type: entry.type,
+        title: entry.title,
+        content: entry.type === 'anfang' ? fallbackText : ''
+      }));
+    if (missingRows.length) {
+      const { error } = await client.from('module_sections').insert(missingRows);
+      if (error) {
+        logEvent('WARN', 'Module sections bootstrap failed', normalizeSupabaseError(error));
+      }
+    }
+    const { data: rows } = await client
+      .from('module_sections')
+      .select('id,module_id,type,title,content,created_at,updated_at')
+      .eq('module_id', moduleId);
+    const ordered = moduleSectionBlueprint().map((entry) => (rows || []).find((row) => row.type === entry.type)).filter(Boolean);
+    return ordered;
+  }
+
   async function renderSpiele() {
     const grid = byId('spieleGrid');
     if (!grid) return;
@@ -436,11 +472,7 @@ const Cloud4 = (() => {
       detailBox.innerHTML = `<div class="wb-title">Modul nicht gefunden</div><p class="author-text">${esc(normalizeSupabaseError(error))}</p>`;
       return;
     }
-    const { data: sections } = await client
-      .from('module_sections')
-      .select('id,module_id,type,title,content,created_at,updated_at')
-      .eq('module_id', moduleId)
-      .order('type', { ascending: true });
+    let sections = await ensureModuleCoreSections(client, moduleId, moduleRow.description || '');
     const { data: pdfs } = await client
       .from('module_pdfs')
       .select('id,module_id,user_id,name,url,created_at')
@@ -457,28 +489,35 @@ const Cloud4 = (() => {
     `;
     if (editorWrap && sectionsGrid) {
       editorWrap.style.display = '';
-      setText('moduleEditorTitle', moduleRow.title || 'Modul bearbeiten');
-      setText('moduleEditorMeta', `${sections?.length || 0} Abschnitte · ${moduleRow.difficulty || 'Standard'}`);
+      const canEdit = isAuthenticatedUser();
+      setText('moduleEditorTitle', `${moduleRow.title || 'Modul'} · Bearbeitungsmodus`);
+      setText('moduleEditorMeta', canEdit ? `Eingeloggt als ${currentDisplayName || currentUser?.email || 'Nutzer'} · ${sections?.length || 0} Container` : `Nur lesbar. Für Bearbeitung bitte anmelden.`);
       sectionsGrid.innerHTML = '';
-      (sections || []).forEach((section) => {
+      (sections || moduleSectionBlueprint()).forEach((section) => {
+        const isReadonlyRow = !section?.id;
+        const safeTitle = section?.title || (section?.type === 'anfang' ? 'Anfang' : section?.type === 'hauptteil' ? 'Hauptteil' : section?.type === 'schluss' ? 'Schluss' : 'Abschnitt');
         const box = document.createElement('div');
         box.className = 'card';
         box.innerHTML = `
           <div class="card-body">
-            <div class="card-title">${esc(section.title || section.type || 'Abschnitt')}</div>
-            <div class="nl-form" style="margin-top:8px;margin-bottom:8px;">
-              <button class="soc-btn section-format" data-id="${esc(section.id)}" data-cmd="bold" type="button">B</button>
-              <button class="soc-btn section-format" data-id="${esc(section.id)}" data-cmd="italic" type="button">I</button>
-              <button class="soc-btn section-format" data-id="${esc(section.id)}" data-cmd="underline" type="button">U</button>
-              <button class="soc-btn section-format" data-id="${esc(section.id)}" data-cmd="insertUnorderedList" type="button">• Liste</button>
-              <button class="soc-btn section-format" data-id="${esc(section.id)}" data-cmd="justifyLeft" type="button">L</button>
-              <button class="soc-btn section-format" data-id="${esc(section.id)}" data-cmd="justifyCenter" type="button">C</button>
-              <button class="soc-btn section-format" data-id="${esc(section.id)}" data-cmd="justifyRight" type="button">R</button>
-            </div>
-            <div class="module-section-content" contenteditable="true" data-id="${esc(section.id)}" style="width:100%;min-height:180px;border:1px solid #333;padding:12px;background:#121212;color:#ddd;">${section.content || ''}</div>
-            <div class="card-foot">
-              <button class="soc-btn module-section-save" data-id="${esc(section.id)}" type="button">Speichern</button>
-            </div>
+            <div class="card-title">${esc(safeTitle)}</div>
+            ${canEdit ? `
+              <div class="nl-form" style="margin-top:8px;margin-bottom:8px;">
+                <button class="soc-btn section-format" data-id="${esc(section.id || '')}" data-cmd="bold" type="button">B</button>
+                <button class="soc-btn section-format" data-id="${esc(section.id || '')}" data-cmd="italic" type="button">I</button>
+                <button class="soc-btn section-format" data-id="${esc(section.id || '')}" data-cmd="underline" type="button">U</button>
+                <button class="soc-btn section-format" data-id="${esc(section.id || '')}" data-cmd="insertUnorderedList" type="button">• Liste</button>
+                <button class="soc-btn section-format" data-id="${esc(section.id || '')}" data-cmd="justifyLeft" type="button">L</button>
+                <button class="soc-btn section-format" data-id="${esc(section.id || '')}" data-cmd="justifyCenter" type="button">C</button>
+                <button class="soc-btn section-format" data-id="${esc(section.id || '')}" data-cmd="justifyRight" type="button">R</button>
+              </div>
+              <div class="module-section-content" contenteditable="true" data-id="${esc(section.id || '')}" style="width:100%;min-height:180px;border:1px solid #333;padding:12px;background:#121212;color:#ddd;">${section?.content || ''}</div>
+              <div class="card-foot">
+                <button class="soc-btn module-section-save" data-id="${esc(section.id || '')}" type="button"${isReadonlyRow ? ' disabled' : ''}>Speichern</button>
+              </div>
+            ` : `
+              <div style="width:100%;min-height:180px;border:1px solid #333;padding:12px;background:#121212;color:#ddd;">${section?.content || ''}</div>
+            `}
           </div>
         `;
         sectionsGrid.appendChild(box);
@@ -487,41 +526,54 @@ const Cloud4 = (() => {
         const outlines = (sections || []).map((s, idx) => `${String(idx + 1).padStart(2, '0')} ${s.title || s.type || 'Abschnitt'}`);
         outlineBox.innerHTML = outlines.length ? outlines.join('<br>') : 'Keine Gliederung';
       }
-      sectionsGrid.querySelectorAll('.section-format').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const sectionId = btn.dataset.id;
-          const cmd = btn.dataset.cmd;
-          const editor = sectionsGrid.querySelector(`.module-section-content[data-id="${sectionId}"]`);
-          if (!editor || !cmd) return;
-          editor.focus();
-          document.execCommand(cmd, false);
+      if (canEdit) {
+        sectionsGrid.querySelectorAll('.section-format').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const sectionId = btn.dataset.id;
+            const cmd = btn.dataset.cmd;
+            const editor = sectionsGrid.querySelector(`.module-section-content[data-id="${sectionId}"]`);
+            if (!editor || !cmd) return;
+            editor.focus();
+            document.execCommand(cmd, false);
+          });
         });
-      });
-      sectionsGrid.querySelectorAll('.module-section-save').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          if (!(await ensureWriteAccess('moduleEditorMeta'))) return;
-          logEvent('INFO', 'Module section save clicked', btn.dataset.id);
-          const done = setBusy(btn, 'Speichert…');
-          const sectionId = btn.dataset.id;
-          const editor = sectionsGrid.querySelector(`.module-section-content[data-id="${sectionId}"]`);
-          const content = editor?.innerHTML || '';
-          const { error: updateError } = await client
-            .from('module_sections')
-            .update({ content })
-            .eq('id', sectionId);
-          done();
-          if (updateError) {
-            setText('moduleEditorMeta', `Speicherfehler: ${normalizeSupabaseError(updateError)}`);
-            return;
-          }
-          setText('moduleEditorMeta', `Änderung gespeichert (${dateLabel(Date.now())})`);
+        sectionsGrid.querySelectorAll('.module-section-save').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            if (!(await ensureWriteAccess('moduleEditorMeta'))) return;
+            const done = setBusy(btn, 'Speichert…');
+            const sectionId = btn.dataset.id;
+            const editor = sectionsGrid.querySelector(`.module-section-content[data-id="${sectionId}"]`);
+            const content = editor?.innerHTML || '';
+            if (!sectionId) {
+              done();
+              setText('moduleEditorMeta', 'Abschnitt konnte nicht gespeichert werden (fehlende ID).');
+              return;
+            }
+            const { error: updateError } = await client
+              .from('module_sections')
+              .update({ content })
+              .eq('id', sectionId);
+            done();
+            if (updateError) {
+              setText('moduleEditorMeta', `Speicherfehler: ${normalizeSupabaseError(updateError)}`);
+              return;
+            }
+            setText('moduleEditorMeta', `✅ Abschnitt gespeichert (${dateLabel(Date.now())})`);
+          });
         });
-      });
+      }
     }
     if (pdfWrap && pdfList) {
       pdfWrap.style.display = '';
       pdfList.innerHTML = (pdfs || []).map((pdf, idx) => `${String(idx + 1).padStart(2, '0')} <a href="${esc(pdf.url)}" target="_blank" rel="noopener noreferrer">${esc(pdf.name || 'PDF')}</a>`).join('<br>') || 'Keine PDFs';
+      const canEditPdf = isAuthenticatedUser();
+      if (pdfNameInput) pdfNameInput.disabled = !canEditPdf;
+      if (pdfUrlInput) pdfUrlInput.disabled = !canEditPdf;
       if (pdfAddBtn) {
+        pdfAddBtn.disabled = !canEditPdf;
+        if (!canEditPdf) {
+          setText('moduleEditorMeta', 'PDF-Upload ist nur für angemeldete Nutzer verfügbar.');
+        }
         pdfAddBtn.onclick = async () => {
           if (!(await ensureWriteAccess('moduleEditorMeta'))) return;
           logEvent('INFO', 'Module PDF add clicked', moduleId);
@@ -1537,6 +1589,10 @@ const Cloud4 = (() => {
     const client = await ensureSupabaseClient();
     if (!client) return;
     const createModuleBtn = byId('createModuleBtn');
+    if (!isAuthenticatedUser()) {
+      setText('moduleCreateStatus', 'Bitte anmelden, um ein Modul zu erstellen.');
+      if (createModuleBtn) createModuleBtn.disabled = false;
+    }
     if (createModuleBtn) {
       createModuleBtn.onclick = async () => {
         if (!(await ensureWriteAccess('moduleCreateStatus'))) return;
@@ -1553,18 +1609,31 @@ const Cloud4 = (() => {
         }
         const payload = { title, description, content, topic, user_id: currentUser?.id || null, is_published: true };
         const { data: inserted, error } = await client.from('modules').insert(payload).select('id').single();
-        done();
         if (error || !inserted?.id) {
+          done();
           setText('moduleCreateStatus', `Erstellen fehlgeschlagen: ${normalizeSupabaseError(error)}`);
           return;
         }
-        await client.from('module_sections').insert({ module_id: inserted.id, type: 'schwerpunkte', title: 'Schwerpunkte', content: content || description });
-        setText('moduleCreateStatus', 'Modul erstellt.');
+        const sectionRows = [
+          { module_id: inserted.id, type: 'anfang', title: 'Anfang', content: content || description },
+          { module_id: inserted.id, type: 'hauptteil', title: 'Hauptteil', content: '' },
+          { module_id: inserted.id, type: 'schluss', title: 'Schluss', content: '' }
+        ];
+        const { error: sectionError } = await client.from('module_sections').insert(sectionRows);
+        done();
+        if (sectionError) {
+          await client.from('modules').delete().eq('id', inserted.id);
+          setText('moduleCreateStatus', `Modul konnte nicht vollständig erstellt werden: ${normalizeSupabaseError(sectionError)}`);
+          return;
+        }
+        setText('moduleCreateStatus', `✅ Modul erfolgreich erstellt (ID: ${inserted.id}).`);
         byId('newModuleTitle').value = '';
         byId('newModuleDescription').value = '';
         byId('newModuleContent').value = '';
         byId('newModuleTopic').value = '';
         await renderCollection('modules', 'moduleGrid', 'moduleHighlights');
+        const next = `${rootPath()}zusammenfassungen/?id=${encodeURIComponent(inserted.id)}`;
+        window.location.href = next;
       };
     }
     const createDeckBtn = byId('createDeckBtn');
