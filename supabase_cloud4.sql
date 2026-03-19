@@ -4,7 +4,6 @@ create extension if not exists "uuid-ossp";
 create extension if not exists pg_trgm;
 
 drop function if exists public.search_notes(text, int);
-drop function if exists public.set_updated_at();
 drop function if exists public.is_admin();
 drop function if exists public.is_admin(uuid);
 drop function if exists public.handle_new_user();
@@ -686,6 +685,41 @@ grant select, insert, update, delete on public.profiles, public.modules, public.
 
 revoke all on function public.search_notes(text, int) from public;
 grant execute on function public.search_notes(text, int) to anon, authenticated;
+
+alter table public.notes replica identity full;
+alter table public.note_sections replica identity full;
+alter table public.search_words replica identity full;
+alter table public.modules replica identity full;
+alter table public.module_sections replica identity full;
+alter table public.module_pdfs replica identity full;
+alter table public.decks replica identity full;
+alter table public.flashcards replica identity full;
+alter table public.deck_repetitions replica identity full;
+alter table public.quizzes replica identity full;
+alter table public.quiz_questions replica identity full;
+alter table public.groups replica identity full;
+alter table public.profiles replica identity full;
+alter table public.user_roles replica identity full;
+
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    begin execute 'alter publication supabase_realtime add table public.notes'; exception when duplicate_object then null; end;
+    begin execute 'alter publication supabase_realtime add table public.note_sections'; exception when duplicate_object then null; end;
+    begin execute 'alter publication supabase_realtime add table public.search_words'; exception when duplicate_object then null; end;
+    begin execute 'alter publication supabase_realtime add table public.modules'; exception when duplicate_object then null; end;
+    begin execute 'alter publication supabase_realtime add table public.module_sections'; exception when duplicate_object then null; end;
+    begin execute 'alter publication supabase_realtime add table public.module_pdfs'; exception when duplicate_object then null; end;
+    begin execute 'alter publication supabase_realtime add table public.decks'; exception when duplicate_object then null; end;
+    begin execute 'alter publication supabase_realtime add table public.flashcards'; exception when duplicate_object then null; end;
+    begin execute 'alter publication supabase_realtime add table public.deck_repetitions'; exception when duplicate_object then null; end;
+    begin execute 'alter publication supabase_realtime add table public.quizzes'; exception when duplicate_object then null; end;
+    begin execute 'alter publication supabase_realtime add table public.quiz_questions'; exception when duplicate_object then null; end;
+    begin execute 'alter publication supabase_realtime add table public.groups'; exception when duplicate_object then null; end;
+    begin execute 'alter publication supabase_realtime add table public.profiles'; exception when duplicate_object then null; end;
+    begin execute 'alter publication supabase_realtime add table public.user_roles'; exception when duplicate_object then null; end;
+  end if;
+end $$;
 
 insert into public.notes (title, teaser, body, category, image_path, is_published)
 select
