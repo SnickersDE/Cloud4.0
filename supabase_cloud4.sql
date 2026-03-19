@@ -340,10 +340,12 @@ begin
 end;
 $$;
 
+drop trigger if exists notes_set_updated_at on public.notes;
 create trigger notes_set_updated_at
 before update on public.notes
 for each row execute procedure public.set_updated_at();
 
+drop trigger if exists note_sections_set_updated_at on public.note_sections;
 create trigger note_sections_set_updated_at
 before update on public.note_sections
 for each row execute procedure public.set_updated_at();
