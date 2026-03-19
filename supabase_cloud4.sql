@@ -4,8 +4,6 @@ create extension if not exists "uuid-ossp";
 create extension if not exists pg_trgm;
 
 drop function if exists public.search_notes(text, int);
-drop function if exists public.handle_new_user();
-drop function if exists public.sync_admin_role();
 
 drop trigger if exists on_auth_user_created on auth.users;
 
