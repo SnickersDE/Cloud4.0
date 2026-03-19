@@ -19,7 +19,7 @@
 
   <nav id="mainNav">
     <div class="nav-inner">
-      <div class="nav-left">
+      <div class="nav-left" id="navLeftLinks">
 
         <div class="nav-item">
           <a class="nav-btn{{ if .IsHome }} active{{ end }}" href="{{ .Site.Home.RelPermalink }}">
@@ -61,13 +61,13 @@
             Mein Konto
           </a>
         </div>
-        <div class="nav-item">
-          <a class="nav-btn{{ if eq .RelPermalink "/login/" }} active{{ end }}" href="{{ "login/" | relURL }}">
+        <div class="nav-item guest-only-link">
+          <a class="nav-btn{{ if eq .RelPermalink "/login/" }} active{{ end }}" id="navLoginLink" href="{{ "login/" | relURL }}">
             Anmelden
           </a>
         </div>
-        <div class="nav-item">
-          <a class="nav-btn{{ if eq .RelPermalink "/register/" }} active{{ end }}" href="{{ "register/" | relURL }}">
+        <div class="nav-item guest-only-link">
+          <a class="nav-btn{{ if eq .RelPermalink "/register/" }} active{{ end }}" id="navRegisterLink" href="{{ "register/" | relURL }}">
             Registrieren
           </a>
         </div>
@@ -88,7 +88,7 @@
     <a href="{{ "ai-mode/" | relURL }}">AI Mode</a>
     <a href="{{ "vernetzen/" | relURL }}">Vernetzen</a>
     <a href="{{ "konto/" | relURL }}">Mein Konto</a>
-    <a href="{{ "login/" | relURL }}">Anmelden</a>
-    <a href="{{ "register/" | relURL }}">Registrieren</a>
+    <a class="guest-only-link" id="mobileLoginLink" href="{{ "login/" | relURL }}">Anmelden</a>
+    <a class="guest-only-link" id="mobileRegisterLink" href="{{ "register/" | relURL }}">Registrieren</a>
   </div>
 </header>

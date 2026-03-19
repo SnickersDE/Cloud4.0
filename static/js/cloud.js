@@ -1,6 +1,7 @@
 const Cloud4 = (() => {
   let supabaseClient = null;
   let currentUser = null;
+  let currentDisplayName = '';
   let currentRole = 'guest';
   let metrics = { notes: 0, modules: 0, decks: 0, quizzes: 0 };
   let cachedSearchResults = [];
@@ -94,15 +95,37 @@ const Cloud4 = (() => {
     if (msg.toLowerCase().includes('invalid login credentials')) return 'Ungültige E-Mail oder Passwort.';
     if (msg.toLowerCase().includes('email not confirmed')) return 'E-Mail ist noch nicht bestätigt.';
     if (msg.toLowerCase().includes('network')) return 'Netzwerkfehler. Bitte Verbindung prüfen.';
+    if (msg.toLowerCase().includes('aborted')) return 'Anfrage abgebrochen. Seite neu laden und erneut versuchen.';
     return msg;
   }
 
   const isAuthenticatedUser = () => Boolean(currentUser?.id);
-  const ensureWriteAccess = (statusElementId, message = 'Bitte anmelden, um Inhalte zu bearbeiten.') => {
+  const ensureWriteAccess = async (statusElementId, message = 'Bitte anmelden, um Inhalte zu bearbeiten.') => {
+    if (!isAuthenticatedUser()) {
+      const client = createSupabase();
+      if (client) {
+        const { data } = await client.auth.getUser();
+        currentUser = data?.user || null;
+      }
+    }
     if (isAuthenticatedUser()) return true;
     setText(statusElementId, message);
     logEvent('WARN', 'Write action blocked (not authenticated)');
     return false;
+  };
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const withRetry = async (fn, retries = 2, label = 'query') => {
+    let lastError = null;
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error;
+        logEvent('WARN', `${label} attempt failed`, `${attempt + 1}/${retries + 1} ${normalizeSupabaseError(error)}`);
+        if (attempt < retries) await sleep(220 * (attempt + 1));
+      }
+    }
+    throw lastError;
   };
 
   function bindAuthListener() {
@@ -128,27 +151,46 @@ const Cloud4 = (() => {
     currentUser = data?.user || null;
     if (!currentUser) {
       currentRole = 'guest';
+      currentDisplayName = '';
+      updateAuthNavigation();
       return;
     }
+    const { data: profile } = await client
+      .from('profiles')
+      .select('username,full_name')
+      .eq('id', currentUser.id)
+      .maybeSingle();
     const { data: roleRows } = await client
       .from('user_roles')
       .select('role')
       .eq('user_id', currentUser.id)
       .limit(1);
     currentRole = roleRows?.[0]?.role || 'authenticated';
+    currentDisplayName = profile?.full_name || profile?.username || currentUser.email || 'User';
+    updateAuthNavigation();
+    logEvent('INFO', 'Auth state loaded', `role=${currentRole} user=${currentDisplayName}`);
   }
 
   async function loadMetrics() {
     const client = createSupabase();
     if (!client) return;
     const fetchCount = async (table) => {
-      const { count } = await client.from(table).select('*', { count: 'exact', head: true });
+      const { count, error } = await withRetry(
+        () => client.from(table).select('id', { count: 'exact', head: true }),
+        1,
+        `count:${table}`
+      );
+      if (error) throw error;
       return count || 0;
     };
-    metrics.notes = await fetchCount('notes');
-    metrics.modules = await fetchCount('modules');
-    metrics.decks = await fetchCount('decks');
-    metrics.quizzes = await fetchCount('quizzes');
+    try {
+      metrics.notes = await fetchCount('notes');
+      metrics.modules = await fetchCount('modules');
+      metrics.decks = await fetchCount('decks');
+      metrics.quizzes = await fetchCount('quizzes');
+    } catch (error) {
+      logEvent('WARN', 'Metrics konnten nicht vollständig geladen werden', normalizeSupabaseError(error));
+    }
   }
 
   function getTickerLines() {
@@ -157,8 +199,15 @@ const Cloud4 = (() => {
       `Module geladen: ${metrics.modules}`,
       `Decks verfügbar: ${metrics.decks}`,
       `Quiz-Sets online: ${metrics.quizzes}`,
-      currentUser ? `Eingeloggt als ${currentRole}` : 'Nicht eingeloggt'
+      currentUser ? `Eingeloggt als: ${currentDisplayName} (${currentRole})` : 'Nicht eingeloggt'
     ];
+  }
+
+  function updateAuthNavigation() {
+    const guestNodes = document.querySelectorAll('.guest-only-link');
+    guestNodes.forEach((node) => {
+      node.style.display = currentUser ? 'none' : '';
+    });
   }
 
   function getScoreChips() {
@@ -309,12 +358,18 @@ const Cloud4 = (() => {
     if (!client || !list) return;
     const { data } = await client
       .from('game_leaderboards')
-      .select('id,score,game_id,profiles(username,full_name)')
+      .select('id,score,game_id,user_id')
       .order('score', { ascending: false })
       .limit(8);
+    const userIds = [...new Set((data || []).map((row) => row.user_id).filter(Boolean))];
+    let profileMap = new Map();
+    if (userIds.length) {
+      const { data: profiles } = await client.from('profiles').select('id,username,full_name').in('id', userIds);
+      profileMap = new Map((profiles || []).map((row) => [row.id, row]));
+    }
     list.innerHTML = (data || []).map((row, idx) => {
-      const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
-      const name = profile?.username || profile?.full_name || 'Unbekannt';
+      const profile = profileMap.get(row.user_id);
+      const name = profile?.username || profile?.full_name || 'Spieler';
       return `<div class="sidebar-item"><div class="sidebar-num">${String(idx + 1).padStart(2, '0')}</div><div class="sidebar-title">${esc(name)}</div><div class="sidebar-tag">${esc(row.game_id)} · ${row.score}</div></div>`;
     }).join('') || '<div class="sidebar-item"><div class="sidebar-title">Noch keine Highscores</div></div>';
   }
@@ -324,7 +379,14 @@ const Cloud4 = (() => {
     if (!grid) return;
     const client = createSupabase();
     if (!client) return;
-    const { data } = await client.from(tableName).select('*').order('created_at', { ascending: false }).limit(24);
+    const selectMap = {
+      modules: 'id,title,description,topic,difficulty,created_at',
+      decks: 'id,title,theme,is_published,created_at',
+      quizzes: 'id,title,description,difficulty,is_published,created_at',
+      documents: 'id,title,upload_date,status,created_at'
+    };
+    const selectColumns = selectMap[tableName] || 'id,title,description,created_at';
+    const { data } = await client.from(tableName).select(selectColumns).order('created_at', { ascending: false }).limit(24);
     const rows = data || [];
     grid.innerHTML = '';
     rows.forEach((row) => {
@@ -404,7 +466,16 @@ const Cloud4 = (() => {
         box.innerHTML = `
           <div class="card-body">
             <div class="card-title">${esc(section.title || section.type || 'Abschnitt')}</div>
-            <textarea class="nl-input module-section-content" data-id="${esc(section.id)}" style="width:100%;height:130px;border:1px solid #333;margin-top:8px;">${esc(section.content || '')}</textarea>
+            <div class="nl-form" style="margin-top:8px;margin-bottom:8px;">
+              <button class="soc-btn section-format" data-id="${esc(section.id)}" data-cmd="bold" type="button">B</button>
+              <button class="soc-btn section-format" data-id="${esc(section.id)}" data-cmd="italic" type="button">I</button>
+              <button class="soc-btn section-format" data-id="${esc(section.id)}" data-cmd="underline" type="button">U</button>
+              <button class="soc-btn section-format" data-id="${esc(section.id)}" data-cmd="insertUnorderedList" type="button">• Liste</button>
+              <button class="soc-btn section-format" data-id="${esc(section.id)}" data-cmd="justifyLeft" type="button">L</button>
+              <button class="soc-btn section-format" data-id="${esc(section.id)}" data-cmd="justifyCenter" type="button">C</button>
+              <button class="soc-btn section-format" data-id="${esc(section.id)}" data-cmd="justifyRight" type="button">R</button>
+            </div>
+            <div class="module-section-content" contenteditable="true" data-id="${esc(section.id)}" style="width:100%;min-height:180px;border:1px solid #333;padding:12px;background:#121212;color:#ddd;">${section.content || ''}</div>
             <div class="card-foot">
               <button class="soc-btn module-section-save" data-id="${esc(section.id)}" type="button">Speichern</button>
             </div>
@@ -416,14 +487,24 @@ const Cloud4 = (() => {
         const outlines = (sections || []).map((s, idx) => `${String(idx + 1).padStart(2, '0')} ${s.title || s.type || 'Abschnitt'}`);
         outlineBox.innerHTML = outlines.length ? outlines.join('<br>') : 'Keine Gliederung';
       }
+      sectionsGrid.querySelectorAll('.section-format').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const sectionId = btn.dataset.id;
+          const cmd = btn.dataset.cmd;
+          const editor = sectionsGrid.querySelector(`.module-section-content[data-id="${sectionId}"]`);
+          if (!editor || !cmd) return;
+          editor.focus();
+          document.execCommand(cmd, false);
+        });
+      });
       sectionsGrid.querySelectorAll('.module-section-save').forEach((btn) => {
         btn.addEventListener('click', async () => {
-          if (!ensureWriteAccess('moduleEditorMeta')) return;
+          if (!(await ensureWriteAccess('moduleEditorMeta'))) return;
           logEvent('INFO', 'Module section save clicked', btn.dataset.id);
           const done = setBusy(btn, 'Speichert…');
           const sectionId = btn.dataset.id;
-          const textarea = sectionsGrid.querySelector(`.module-section-content[data-id="${sectionId}"]`);
-          const content = textarea?.value || '';
+          const editor = sectionsGrid.querySelector(`.module-section-content[data-id="${sectionId}"]`);
+          const content = editor?.innerHTML || '';
           const { error: updateError } = await client
             .from('module_sections')
             .update({ content })
@@ -442,7 +523,7 @@ const Cloud4 = (() => {
       pdfList.innerHTML = (pdfs || []).map((pdf, idx) => `${String(idx + 1).padStart(2, '0')} <a href="${esc(pdf.url)}" target="_blank" rel="noopener noreferrer">${esc(pdf.name || 'PDF')}</a>`).join('<br>') || 'Keine PDFs';
       if (pdfAddBtn) {
         pdfAddBtn.onclick = async () => {
-          if (!ensureWriteAccess('moduleEditorMeta')) return;
+          if (!(await ensureWriteAccess('moduleEditorMeta'))) return;
           logEvent('INFO', 'Module PDF add clicked', moduleId);
           const done = setBusy(pdfAddBtn, 'Speichert…');
           const name = pdfNameInput?.value?.trim() || '';
@@ -513,7 +594,7 @@ const Cloud4 = (() => {
     if (statsBox) statsBox.innerHTML = `Known ${known}<br>Unknown ${unknown}`;
     cardsGrid.querySelectorAll('.flashcard-save').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        if (!ensureWriteAccess('deckDetailMeta')) return;
+        if (!(await ensureWriteAccess('deckDetailMeta'))) return;
         logEvent('INFO', 'Flashcard save clicked', btn.dataset.id);
         const done = setBusy(btn, 'Speichert…');
         const cardId = btn.dataset.id;
@@ -529,7 +610,7 @@ const Cloud4 = (() => {
     });
     cardsGrid.querySelectorAll('.flashcard-delete').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        if (!ensureWriteAccess('deckDetailMeta')) return;
+        if (!(await ensureWriteAccess('deckDetailMeta'))) return;
         logEvent('INFO', 'Flashcard delete clicked', btn.dataset.id);
         const done = setBusy(btn, 'Löscht…');
         const cardId = btn.dataset.id;
@@ -543,7 +624,7 @@ const Cloud4 = (() => {
       });
     });
     addBtn.onclick = async () => {
-      if (!ensureWriteAccess('deckDetailMeta')) return;
+      if (!(await ensureWriteAccess('deckDetailMeta'))) return;
       logEvent('INFO', 'Flashcard add clicked', deckId);
       const done = setBusy(addBtn, 'Erstellt…');
       const front = byId('newFlashcardFront')?.value?.trim() || '';
@@ -614,7 +695,7 @@ const Cloud4 = (() => {
     if (statsBox) statsBox.innerHTML = `${quiz.difficulty || 'Quiz'}<br>${(questions || []).length} Fragen`;
     questionsGrid.querySelectorAll('.quiz-question-save').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        if (!ensureWriteAccess('quizDetailMeta')) return;
+        if (!(await ensureWriteAccess('quizDetailMeta'))) return;
         logEvent('INFO', 'Quiz question save clicked', btn.dataset.id);
         const done = setBusy(btn, 'Speichert…');
         const id = btn.dataset.id;
@@ -634,7 +715,7 @@ const Cloud4 = (() => {
     });
     questionsGrid.querySelectorAll('.quiz-question-delete').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        if (!ensureWriteAccess('quizDetailMeta')) return;
+        if (!(await ensureWriteAccess('quizDetailMeta'))) return;
         logEvent('INFO', 'Quiz question delete clicked', btn.dataset.id);
         const done = setBusy(btn, 'Löscht…');
         const id = btn.dataset.id;
@@ -648,7 +729,7 @@ const Cloud4 = (() => {
       });
     });
     addBtn.onclick = async () => {
-      if (!ensureWriteAccess('quizDetailMeta')) return;
+      if (!(await ensureWriteAccess('quizDetailMeta'))) return;
       logEvent('INFO', 'Quiz question add clicked', quizId);
       const done = setBusy(addBtn, 'Erstellt…');
       const question = byId('newQuizQuestion')?.value?.trim() || '';
@@ -688,8 +769,49 @@ const Cloud4 = (() => {
     setText('networkDetailTitle', 'Vernetzen Workspace');
     setText('networkDetailMeta', 'Freunde, Gruppen und gemeinsames Arbeiten');
     if (statsBox) statsBox.innerHTML = `${friendsGrid?.children.length || 0} Friends<br>${groupsGrid?.children.length || 0} Groups`;
+    const addFriendBtn = byId('addFriendBtn');
+    if (addFriendBtn) {
+      addFriendBtn.onclick = async () => {
+        if (!(await ensureWriteAccess('networkDetailMeta'))) return;
+        const done = setBusy(addFriendBtn, 'Verknüpft…');
+        const friendCode = byId('friendCodeInput')?.value?.trim() || '';
+        if (!friendCode) {
+          done();
+          setText('networkDetailMeta', 'Bitte Freundschaftscode eingeben.');
+          return;
+        }
+        const { data: friendProfile, error: profileError } = await client
+          .from('profiles')
+          .select('id,username,full_name')
+          .eq('friendship_code', friendCode)
+          .maybeSingle();
+        if (profileError || !friendProfile?.id || !currentUser?.id) {
+          done();
+          setText('networkDetailMeta', `Freund nicht gefunden: ${normalizeSupabaseError(profileError)}`);
+          return;
+        }
+        if (friendProfile.id === currentUser.id) {
+          done();
+          setText('networkDetailMeta', 'Du kannst dich nicht selbst hinzufügen.');
+          return;
+        }
+        const pairRows = [
+          { user_id: currentUser.id, friend_user_id: friendProfile.id, status: 'accepted' },
+          { user_id: friendProfile.id, friend_user_id: currentUser.id, status: 'accepted' }
+        ];
+        const { error: insertError } = await client.from('friendships').upsert(pairRows, { onConflict: 'user_id,friend_user_id' });
+        done();
+        if (insertError) {
+          setText('networkDetailMeta', `Freund konnte nicht hinzugefügt werden: ${normalizeSupabaseError(insertError)}`);
+          return;
+        }
+        byId('friendCodeInput').value = '';
+        setText('networkDetailMeta', `Freund hinzugefügt: ${friendProfile.full_name || friendProfile.username || 'Nutzer'}`);
+        await renderVernetzen();
+      };
+    }
     createBtn.onclick = async () => {
-      if (!ensureWriteAccess('networkDetailMeta')) return;
+      if (!(await ensureWriteAccess('networkDetailMeta'))) return;
       logEvent('INFO', 'Create group clicked');
       const done = setBusy(createBtn, 'Erstellt…');
       const name = byId('newGroupName')?.value?.trim() || '';
@@ -715,27 +837,68 @@ const Cloud4 = (() => {
   }
 
   async function renderVernetzen() {
-    const client = createSupabase();
+    const client = await ensureSupabaseClient();
     if (!client) return;
     const friendsGrid = byId('friendsGrid');
     const groupsGrid = byId('groupsGrid');
+    const groupPanelContent = byId('groupPanelContent');
     const hi = byId('networkHighlights');
     if (friendsGrid) {
-      const { data } = await client.from('profiles').select('id,username,full_name').limit(24);
-      (data || []).forEach((row) => {
-        const name = row.username || row.full_name || 'Nutzer';
-        const card = document.createElement('div');
-        card.innerHTML = cardHtml(name, 'Community Profil', '#');
-        friendsGrid.appendChild(card.firstChild);
-      });
+      friendsGrid.innerHTML = '';
+      if (!currentUser?.id) {
+        friendsGrid.innerHTML = '<div class="card"><div class="card-body"><div class="card-title">Bitte anmelden</div><div class="card-excerpt">Freundesliste ist für eingeloggte Nutzer sichtbar.</div></div></div>';
+      } else {
+        const { data: relations } = await client
+          .from('friendships')
+          .select('friend_user_id')
+          .eq('user_id', currentUser.id)
+          .limit(200);
+        const friendIds = (relations || []).map((row) => row.friend_user_id).filter(Boolean);
+        let profiles = [];
+        if (friendIds.length) {
+          const { data } = await client
+            .from('profiles')
+            .select('id,username,full_name,study_program,friendship_code')
+            .in('id', friendIds);
+          profiles = data || [];
+        }
+        profiles.forEach((row) => {
+          const name = row.username || row.full_name || 'Nutzer';
+          const subtitle = `${row.study_program || 'Studiengang offen'} · Code ${row.friendship_code || '—'}`;
+          const card = document.createElement('div');
+          card.innerHTML = cardHtml(name, subtitle, '#');
+          friendsGrid.appendChild(card.firstChild);
+        });
+        if (!profiles.length) {
+          friendsGrid.innerHTML = '<div class="card"><div class="card-body"><div class="card-title">Noch keine Freunde</div><div class="card-excerpt">Nutze einen Freundschaftscode zum Hinzufügen.</div></div></div>';
+        }
+      }
     }
     if (groupsGrid) {
-      const { data } = await client.from('groups').select('id,name,description').order('name', { ascending: true }).limit(24);
+      groupsGrid.innerHTML = '';
+      const { data } = await client.from('groups').select('id,name,description,owner_id').order('name', { ascending: true }).limit(40);
       (data || []).forEach((row) => {
         const card = document.createElement('div');
-        card.innerHTML = cardHtml(row.name || 'Gruppe', row.description || '', '#');
-        groupsGrid.appendChild(card.firstChild);
+        card.innerHTML = cardHtml(row.name || 'Gruppe', row.description || '', `${rootPath()}vernetzen/?group=${encodeURIComponent(row.id)}`);
+        const el = card.firstChild;
+        el.onclick = () => {
+          const params = new URLSearchParams(window.location.search);
+          params.set('group', row.id);
+          window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+          if (groupPanelContent) {
+            groupPanelContent.innerHTML = `<div class="wb-title">${esc(row.name || 'Gruppe')}</div><p class="author-text">${esc(row.description || '')}</p><p class="author-text">Owner: ${esc(row.owner_id || 'unbekannt')}</p>`;
+          }
+        };
+        groupsGrid.appendChild(el);
       });
+      const selectedGroup = new URLSearchParams(window.location.search).get('group');
+      if (groupPanelContent) {
+        if (!selectedGroup) groupPanelContent.innerHTML = 'Bitte Gruppe auswählen.';
+        const picked = (data || []).find((g) => g.id === selectedGroup);
+        if (picked) {
+          groupPanelContent.innerHTML = `<div class="wb-title">${esc(picked.name || 'Gruppe')}</div><p class="author-text">${esc(picked.description || '')}</p>`;
+        }
+      }
     }
     if (hi) {
       hi.innerHTML = `<div class="hot-side"><div class="hs-num">01</div><div class="hs-title">Freunde</div><div class="hs-meta">${friendsGrid ? friendsGrid.children.length : 0} Einträge</div></div>
@@ -754,7 +917,7 @@ const Cloud4 = (() => {
       if (byId('accountMail')) byId('accountMail').textContent = 'Bitte einloggen, um Kontodaten zu sehen.';
       return;
     }
-    const { data: profile } = await client.from('profiles').select('username,full_name,avatar_url').eq('id', user.id).maybeSingle();
+    const { data: profile } = await client.from('profiles').select('username,full_name,avatar_url,about_me,study_program,friendship_code').eq('id', user.id).maybeSingle();
     if (byId('accountName')) byId('accountName').textContent = profile?.full_name || profile?.username || user.email || 'Profil';
     if (byId('accountMail')) byId('accountMail').textContent = user.email || '';
     if (byId('accountMeta')) byId('accountMeta').textContent = `Rolle: ${currentRole}`;
@@ -773,6 +936,28 @@ const Cloud4 = (() => {
         setText('accountLogoutStatus', 'Erfolgreich ausgeloggt.');
         logEvent('INFO', 'Logout successful', user.email || user.id);
         window.location.href = `${rootPath()}login/`;
+      };
+    }
+    const aboutEl = byId('profileAboutMe');
+    const studyEl = byId('profileStudyProgram');
+    const codeEl = byId('profileFriendCode');
+    if (aboutEl) aboutEl.value = profile?.about_me || '';
+    if (studyEl) studyEl.value = profile?.study_program || '';
+    if (codeEl) codeEl.value = profile?.friendship_code || '';
+    const saveBtn = byId('saveProfileBtn');
+    if (saveBtn) {
+      saveBtn.onclick = async () => {
+        const done = setBusy(saveBtn, 'Speichert…');
+        const aboutMe = byId('profileAboutMe')?.value || '';
+        const studyProgram = byId('profileStudyProgram')?.value || '';
+        const payload = { about_me: aboutMe, study_program: studyProgram };
+        const { error } = await client.from('profiles').update(payload).eq('id', user.id);
+        done();
+        if (error) {
+          setText('profileStatus', `Speichern fehlgeschlagen: ${normalizeSupabaseError(error)}`);
+          return;
+        }
+        setText('profileStatus', 'Profil erfolgreich gespeichert.');
       };
     }
     const { data: notes } = await client.from('notes').select('id,title,teaser').eq('author_id', user.id).order('created_at', { ascending: false }).limit(24);
@@ -1290,7 +1475,7 @@ const Cloud4 = (() => {
         await loadAuthState();
         done();
         logEvent('INFO', 'Login erfolgreich', currentUser?.email || email);
-        if (byId('loginStatus')) byId('loginStatus').textContent = 'Anmeldung erfolgreich.';
+        if (byId('loginStatus')) byId('loginStatus').textContent = `Anmeldung erfolgreich. Rolle: ${currentRole} · User: ${currentDisplayName || currentUser?.email || email}`;
         window.location.href = `${rootPath()}konto/`;
       });
     } else {
@@ -1354,7 +1539,7 @@ const Cloud4 = (() => {
     const createModuleBtn = byId('createModuleBtn');
     if (createModuleBtn) {
       createModuleBtn.onclick = async () => {
-        if (!ensureWriteAccess('moduleCreateStatus')) return;
+        if (!(await ensureWriteAccess('moduleCreateStatus'))) return;
         logEvent('INFO', 'Create module clicked');
         const done = setBusy(createModuleBtn, 'Erstellt…');
         const title = byId('newModuleTitle')?.value?.trim() || '';
@@ -1385,7 +1570,7 @@ const Cloud4 = (() => {
     const createDeckBtn = byId('createDeckBtn');
     if (createDeckBtn) {
       createDeckBtn.onclick = async () => {
-        if (!ensureWriteAccess('deckCreateStatus')) return;
+        if (!(await ensureWriteAccess('deckCreateStatus'))) return;
         logEvent('INFO', 'Create deck clicked');
         const done = setBusy(createDeckBtn, 'Erstellt…');
         const title = byId('newDeckTitle')?.value?.trim() || '';
@@ -1410,7 +1595,7 @@ const Cloud4 = (() => {
     const createQuizBtn = byId('createQuizBtn');
     if (createQuizBtn) {
       createQuizBtn.onclick = async () => {
-        if (!ensureWriteAccess('quizCreateStatus')) return;
+        if (!(await ensureWriteAccess('quizCreateStatus'))) return;
         logEvent('INFO', 'Create quiz clicked');
         const done = setBusy(createQuizBtn, 'Erstellt…');
         const title = byId('newQuizTitle')?.value?.trim() || '';

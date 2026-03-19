@@ -155,6 +155,32 @@ create table if not exists public.groups (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.friendships (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  friend_user_id uuid not null references auth.users(id) on delete cascade,
+  status text not null default 'accepted',
+  created_at timestamptz not null default now(),
+  unique(user_id, friend_user_id)
+);
+
+create table if not exists public.group_members (
+  id uuid primary key default uuid_generate_v4(),
+  group_id uuid not null references public.groups(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  role text not null default 'member',
+  created_at timestamptz not null default now(),
+  unique(group_id, user_id)
+);
+
+create table if not exists public.game_leaderboards (
+  id uuid primary key default uuid_generate_v4(),
+  game_id text not null,
+  user_id uuid references auth.users(id) on delete set null,
+  score int not null default 0,
+  created_at timestamptz not null default now()
+);
+
 alter table public.notes add column if not exists teaser text default '';
 alter table public.notes add column if not exists body text default '';
 alter table public.notes add column if not exists category text default 'Mitschrift';
@@ -230,8 +256,17 @@ alter table public.profiles add column if not exists email text;
 alter table public.profiles add column if not exists username text;
 alter table public.profiles add column if not exists full_name text;
 alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists about_me text default '';
+alter table public.profiles add column if not exists study_program text default '';
+alter table public.profiles add column if not exists friendship_code text;
 alter table public.profiles add column if not exists created_at timestamptz default now();
 alter table public.profiles add column if not exists updated_at timestamptz default now();
+alter table public.friendships add column if not exists status text default 'accepted';
+alter table public.friendships add column if not exists created_at timestamptz default now();
+alter table public.group_members add column if not exists role text default 'member';
+alter table public.group_members add column if not exists created_at timestamptz default now();
+alter table public.game_leaderboards add column if not exists score int default 0;
+alter table public.game_leaderboards add column if not exists created_at timestamptz default now();
 
 alter table public.user_roles alter column role set not null;
 alter table public.notes alter column title set not null;
@@ -272,6 +307,10 @@ create index if not exists quizzes_created_at_idx on public.quizzes (created_at 
 create index if not exists quiz_questions_quiz_id_idx on public.quiz_questions (quiz_id, "order");
 create index if not exists groups_name_idx on public.groups (name);
 create index if not exists profiles_username_idx on public.profiles (username);
+create unique index if not exists profiles_friendship_code_unique_idx on public.profiles (friendship_code);
+create index if not exists friendships_user_idx on public.friendships (user_id, friend_user_id);
+create index if not exists group_members_group_idx on public.group_members (group_id, user_id);
+create index if not exists game_leaderboards_game_idx on public.game_leaderboards (game_id, score desc);
 
 create or replace function public.is_admin(check_user_id uuid)
 returns boolean
@@ -316,17 +355,19 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email, username, full_name)
+  insert into public.profiles (id, email, username, full_name, friendship_code)
   values (
     new.id,
     new.email,
     split_part(coalesce(new.email, ''), '@', 1),
-    split_part(coalesce(new.email, ''), '@', 1)
+    split_part(coalesce(new.email, ''), '@', 1),
+    upper(substr(md5(new.id::text || coalesce(new.email, '') || now()::text), 1, 10))
   )
   on conflict (id) do update
     set email = excluded.email,
         username = coalesce(public.profiles.username, excluded.username),
-        full_name = coalesce(public.profiles.full_name, excluded.full_name);
+        full_name = coalesce(public.profiles.full_name, excluded.full_name),
+        friendship_code = coalesce(public.profiles.friendship_code, excluded.friendship_code);
 
   insert into public.user_roles (user_id, role)
   values (
@@ -413,6 +454,9 @@ alter table public.deck_repetitions enable row level security;
 alter table public.quizzes enable row level security;
 alter table public.quiz_questions enable row level security;
 alter table public.groups enable row level security;
+alter table public.friendships enable row level security;
+alter table public.group_members enable row level security;
+alter table public.game_leaderboards enable row level security;
 
 drop policy if exists "user_roles_select_own_or_admin" on public.user_roles;
 drop policy if exists "user_roles_insert_admin_only" on public.user_roles;
@@ -562,7 +606,7 @@ drop policy if exists "decks_select_public_or_auth" on public.decks;
 drop policy if exists "decks_insert_auth" on public.decks;
 drop policy if exists "decks_update_owner_or_admin" on public.decks;
 drop policy if exists "decks_delete_owner_or_admin" on public.decks;
-create policy "decks_select_public_or_auth" on public.decks for select using (auth.uid() is not null or public.is_admin());
+create policy "decks_select_public_or_auth" on public.decks for select using (is_published = true or user_id = auth.uid() or public.is_admin());
 create policy "decks_insert_auth" on public.decks for insert with check (auth.uid() is not null);
 create policy "decks_update_owner_or_admin" on public.decks for update using (public.is_admin() or user_id = auth.uid()) with check (public.is_admin() or user_id = auth.uid());
 create policy "decks_delete_owner_or_admin" on public.decks for delete using (public.is_admin() or user_id = auth.uid());
@@ -611,6 +655,33 @@ create policy "groups_select_auth_or_admin" on public.groups for select using (a
 create policy "groups_insert_auth" on public.groups for insert with check (auth.uid() is not null);
 create policy "groups_update_owner_or_admin" on public.groups for update using (public.is_admin() or owner_id = auth.uid()) with check (public.is_admin() or owner_id = auth.uid());
 create policy "groups_delete_owner_or_admin" on public.groups for delete using (public.is_admin() or owner_id = auth.uid());
+
+drop policy if exists "friendships_select_own_or_public_friend" on public.friendships;
+drop policy if exists "friendships_insert_own_or_admin" on public.friendships;
+drop policy if exists "friendships_update_own_or_admin" on public.friendships;
+drop policy if exists "friendships_delete_own_or_admin" on public.friendships;
+create policy "friendships_select_own_or_public_friend" on public.friendships for select using (user_id = auth.uid() or friend_user_id = auth.uid() or public.is_admin());
+create policy "friendships_insert_own_or_admin" on public.friendships for insert with check (user_id = auth.uid() or public.is_admin());
+create policy "friendships_update_own_or_admin" on public.friendships for update using (user_id = auth.uid() or public.is_admin()) with check (user_id = auth.uid() or public.is_admin());
+create policy "friendships_delete_own_or_admin" on public.friendships for delete using (user_id = auth.uid() or public.is_admin());
+
+drop policy if exists "group_members_select_auth_or_admin" on public.group_members;
+drop policy if exists "group_members_insert_owner_or_admin" on public.group_members;
+drop policy if exists "group_members_update_owner_or_admin" on public.group_members;
+drop policy if exists "group_members_delete_owner_or_admin" on public.group_members;
+create policy "group_members_select_auth_or_admin" on public.group_members for select using (auth.uid() is not null or public.is_admin());
+create policy "group_members_insert_owner_or_admin" on public.group_members for insert with check (public.is_admin() or exists(select 1 from public.groups g where g.id = group_members.group_id and g.owner_id = auth.uid()));
+create policy "group_members_update_owner_or_admin" on public.group_members for update using (public.is_admin() or exists(select 1 from public.groups g where g.id = group_members.group_id and g.owner_id = auth.uid())) with check (public.is_admin() or exists(select 1 from public.groups g where g.id = group_members.group_id and g.owner_id = auth.uid()));
+create policy "group_members_delete_owner_or_admin" on public.group_members for delete using (public.is_admin() or exists(select 1 from public.groups g where g.id = group_members.group_id and g.owner_id = auth.uid()));
+
+drop policy if exists "game_leaderboards_select_public" on public.game_leaderboards;
+drop policy if exists "game_leaderboards_insert_auth" on public.game_leaderboards;
+drop policy if exists "game_leaderboards_update_own_or_admin" on public.game_leaderboards;
+drop policy if exists "game_leaderboards_delete_own_or_admin" on public.game_leaderboards;
+create policy "game_leaderboards_select_public" on public.game_leaderboards for select using (true);
+create policy "game_leaderboards_insert_auth" on public.game_leaderboards for insert with check (auth.uid() is not null and user_id = auth.uid());
+create policy "game_leaderboards_update_own_or_admin" on public.game_leaderboards for update using (public.is_admin() or user_id = auth.uid()) with check (public.is_admin() or user_id = auth.uid());
+create policy "game_leaderboards_delete_own_or_admin" on public.game_leaderboards for delete using (public.is_admin() or user_id = auth.uid());
 
 create or replace function public.search_notes(query_text text, result_limit int default 30)
 returns table (
@@ -676,12 +747,16 @@ revoke all on public.deck_repetitions from anon, authenticated;
 revoke all on public.quizzes from anon, authenticated;
 revoke all on public.quiz_questions from anon, authenticated;
 revoke all on public.groups from anon, authenticated;
+revoke all on public.friendships from anon, authenticated;
+revoke all on public.group_members from anon, authenticated;
+revoke all on public.game_leaderboards from anon, authenticated;
 
 grant select on public.notes, public.note_sections, public.search_words to anon;
 grant select, insert, update, delete on public.user_roles, public.notes, public.note_sections, public.search_words to authenticated;
 grant select on public.modules, public.module_sections, public.module_pdfs, public.decks, public.flashcards, public.quizzes, public.quiz_questions, public.groups to anon;
 grant select on public.profiles to anon;
-grant select, insert, update, delete on public.profiles, public.modules, public.module_sections, public.module_pdfs, public.decks, public.flashcards, public.deck_repetitions, public.quizzes, public.quiz_questions, public.groups to authenticated;
+grant select on public.game_leaderboards to anon;
+grant select, insert, update, delete on public.profiles, public.modules, public.module_sections, public.module_pdfs, public.decks, public.flashcards, public.deck_repetitions, public.quizzes, public.quiz_questions, public.groups, public.friendships, public.group_members, public.game_leaderboards to authenticated;
 
 revoke all on function public.search_notes(text, int) from public;
 grant execute on function public.search_notes(text, int) to anon, authenticated;
@@ -698,6 +773,9 @@ alter table public.deck_repetitions replica identity full;
 alter table public.quizzes replica identity full;
 alter table public.quiz_questions replica identity full;
 alter table public.groups replica identity full;
+alter table public.friendships replica identity full;
+alter table public.group_members replica identity full;
+alter table public.game_leaderboards replica identity full;
 alter table public.profiles replica identity full;
 alter table public.user_roles replica identity full;
 
@@ -716,6 +794,9 @@ begin
     begin execute 'alter publication supabase_realtime add table public.quizzes'; exception when duplicate_object then null; end;
     begin execute 'alter publication supabase_realtime add table public.quiz_questions'; exception when duplicate_object then null; end;
     begin execute 'alter publication supabase_realtime add table public.groups'; exception when duplicate_object then null; end;
+    begin execute 'alter publication supabase_realtime add table public.friendships'; exception when duplicate_object then null; end;
+    begin execute 'alter publication supabase_realtime add table public.group_members'; exception when duplicate_object then null; end;
+    begin execute 'alter publication supabase_realtime add table public.game_leaderboards'; exception when duplicate_object then null; end;
     begin execute 'alter publication supabase_realtime add table public.profiles'; exception when duplicate_object then null; end;
     begin execute 'alter publication supabase_realtime add table public.user_roles'; exception when duplicate_object then null; end;
   end if;

@@ -75,7 +75,7 @@ header { background:var(--header-bg); border-bottom:4px solid var(--ink); transi
 nav { background:var(--nav-bg); position:sticky; top:0; z-index:800; transition:box-shadow .2s; }
 nav.scrolled { box-shadow:0 4px 24px rgba(0,0,0,.5); }
 .nav-inner { display:flex; align-items:center; padding:0 48px; justify-content:space-between; }
-.nav-left { display:flex; }
+.nav-left { display:none; }
 .nav-item { position:relative; }
 .nav-btn { background:none; border:none; color:#fff; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:14px; letter-spacing:2.5px; text-transform:uppercase; padding:15px 22px; cursor:pointer; transition:background .15s; display:block; position:relative; text-decoration:none; }
 .nav-btn::after { content:''; position:absolute; bottom:0; left:50%; right:50%; height:3px; background:var(--red); transition:left .2s,right .2s; }
