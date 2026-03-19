@@ -14,13 +14,45 @@
     <div class="nl-form" style="display:block;">
       <input class="nl-input" id="newModuleTitle" type="text" placeholder="Modultitel" style="width:100%;border-right:1px solid #333;margin-bottom:8px;"/>
       <input class="nl-input" id="newModuleDescription" type="text" placeholder="Kurzbeschreibung" style="width:100%;border-right:1px solid #333;margin-bottom:8px;"/>
-      <textarea class="nl-input" id="newModuleContent" placeholder="Inhalt / Zusammenfassung" style="width:100%;height:120px;border-right:1px solid #333;margin-bottom:8px;"></textarea>
       <input class="nl-input" id="newModuleTopic" type="text" placeholder="Thema" style="width:100%;border-right:1px solid #333;margin-bottom:8px;"/>
+      <div class="card" style="margin-bottom:8px;">
+        <div class="card-body">
+          <div class="card-title">Anfang</div>
+          <div class="nl-form" style="margin-top:8px;margin-bottom:8px;">
+            <button class="soc-btn create-section-format" data-target="newModuleIntro" data-cmd="bold" type="button">B</button>
+            <button class="soc-btn create-section-format" data-target="newModuleIntro" data-cmd="italic" type="button">I</button>
+            <button class="soc-btn create-section-format" data-target="newModuleIntro" data-cmd="underline" type="button">U</button>
+          </div>
+          <div class="module-create-content" id="newModuleIntro" contenteditable="true" style="width:100%;min-height:100px;border:1px solid #333;padding:10px;background:#121212;color:#ddd;"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:8px;">
+        <div class="card-body">
+          <div class="card-title">Hauptteil</div>
+          <div class="nl-form" style="margin-top:8px;margin-bottom:8px;">
+            <button class="soc-btn create-section-format" data-target="newModuleMain" data-cmd="bold" type="button">B</button>
+            <button class="soc-btn create-section-format" data-target="newModuleMain" data-cmd="italic" type="button">I</button>
+            <button class="soc-btn create-section-format" data-target="newModuleMain" data-cmd="underline" type="button">U</button>
+          </div>
+          <div class="module-create-content" id="newModuleMain" contenteditable="true" style="width:100%;min-height:130px;border:1px solid #333;padding:10px;background:#121212;color:#ddd;"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:8px;">
+        <div class="card-body">
+          <div class="card-title">Schluss</div>
+          <div class="nl-form" style="margin-top:8px;margin-bottom:8px;">
+            <button class="soc-btn create-section-format" data-target="newModuleConclusion" data-cmd="bold" type="button">B</button>
+            <button class="soc-btn create-section-format" data-target="newModuleConclusion" data-cmd="italic" type="button">I</button>
+            <button class="soc-btn create-section-format" data-target="newModuleConclusion" data-cmd="underline" type="button">U</button>
+          </div>
+          <div class="module-create-content" id="newModuleConclusion" contenteditable="true" style="width:100%;min-height:100px;border:1px solid #333;padding:10px;background:#121212;color:#ddd;"></div>
+        </div>
+      </div>
       <button class="nl-btn" id="createModuleBtn" type="button">Modul erstellen</button>
     </div>
     <p class="author-text" id="moduleCreateStatus"></p>
   </div>
-  <div class="support-qr">CREATE</div>
+  <div class="support-qr" id="moduleCreateInfo">Status<br/>Editor<br/>Ready</div>
 </div>
 <div class="container"><div class="section-label">Module</div></div>
 <div class="main-grid" id="moduleGrid"></div>

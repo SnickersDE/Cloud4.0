@@ -176,7 +176,7 @@ const Cloud4 = (() => {
     if (!client) return;
     const fetchCount = async (table) => {
       const { count, error } = await withRetry(
-        () => client.from(table).select('id', { count: 'exact', head: true }),
+        () => client.from(table).select('id', { count: 'exact' }).limit(1),
         1,
         `count:${table}`
       );
@@ -450,10 +450,26 @@ const Cloud4 = (() => {
     const pdfUrlInput = byId('modulePdfUrl');
     const pdfAddBtn = byId('modulePdfAddBtn');
     if (!moduleId) {
-      detailBox.style.display = 'none';
-      detailBox.innerHTML = '';
-      if (editorWrap) editorWrap.style.display = 'none';
-      if (pdfWrap) pdfWrap.style.display = 'none';
+      detailBox.style.display = '';
+      detailBox.innerHTML = '<div class="wb-title">Modul auswählen</div><p class="author-text">Wähle ein Modul aus der Liste, um den Bearbeitungsmodus zu öffnen.</p>';
+      if (editorWrap) {
+        editorWrap.style.display = '';
+        setText('moduleEditorTitle', 'Bearbeitungsmodus');
+        setText('moduleEditorMeta', 'Noch kein Modul ausgewählt.');
+      }
+      if (sectionsGrid) {
+        sectionsGrid.innerHTML = `
+          <div class="card"><div class="card-body"><div class="card-title">Anfang</div><div style="min-height:120px;border:1px solid #333;padding:10px;background:#121212;color:#777;">Editor erscheint nach Modulauswahl.</div></div></div>
+          <div class="card"><div class="card-body"><div class="card-title">Hauptteil</div><div style="min-height:120px;border:1px solid #333;padding:10px;background:#121212;color:#777;">Editor erscheint nach Modulauswahl.</div></div></div>
+          <div class="card"><div class="card-body"><div class="card-title">Schluss</div><div style="min-height:120px;border:1px solid #333;padding:10px;background:#121212;color:#777;">Editor erscheint nach Modulauswahl.</div></div></div>`;
+      }
+      if (outlineBox) outlineBox.innerHTML = '01 Anfang<br>02 Hauptteil<br>03 Schluss';
+      if (pdfWrap) {
+        pdfWrap.style.display = '';
+      }
+      if (pdfList) {
+        pdfList.innerHTML = 'PDF-Container wird nach Modulauswahl geladen.';
+      }
       return;
     }
     const client = await ensureSupabaseClient();
@@ -1594,13 +1610,26 @@ const Cloud4 = (() => {
       if (createModuleBtn) createModuleBtn.disabled = false;
     }
     if (createModuleBtn) {
+      document.querySelectorAll('.create-section-format').forEach((btn) => {
+        btn.onclick = () => {
+          const target = btn.dataset.target;
+          const cmd = btn.dataset.cmd;
+          const editor = target ? byId(target) : null;
+          if (!editor || !cmd) return;
+          editor.focus();
+          document.execCommand(cmd, false);
+        };
+      });
       createModuleBtn.onclick = async () => {
         if (!(await ensureWriteAccess('moduleCreateStatus'))) return;
         logEvent('INFO', 'Create module clicked');
         const done = setBusy(createModuleBtn, 'Erstellt…');
         const title = byId('newModuleTitle')?.value?.trim() || '';
         const description = byId('newModuleDescription')?.value?.trim() || '';
-        const content = byId('newModuleContent')?.value?.trim() || '';
+        const introHtml = byId('newModuleIntro')?.innerHTML?.trim() || '';
+        const mainHtml = byId('newModuleMain')?.innerHTML?.trim() || '';
+        const conclusionHtml = byId('newModuleConclusion')?.innerHTML?.trim() || '';
+        const content = [introHtml, mainHtml, conclusionHtml].filter(Boolean).join('<hr/>');
         const topic = byId('newModuleTopic')?.value?.trim() || '';
         if (!title || !description) {
           done();
@@ -1615,9 +1644,9 @@ const Cloud4 = (() => {
           return;
         }
         const sectionRows = [
-          { module_id: inserted.id, type: 'anfang', title: 'Anfang', content: content || description },
-          { module_id: inserted.id, type: 'hauptteil', title: 'Hauptteil', content: '' },
-          { module_id: inserted.id, type: 'schluss', title: 'Schluss', content: '' }
+          { module_id: inserted.id, type: 'anfang', title: 'Anfang', content: introHtml || description },
+          { module_id: inserted.id, type: 'hauptteil', title: 'Hauptteil', content: mainHtml || '' },
+          { module_id: inserted.id, type: 'schluss', title: 'Schluss', content: conclusionHtml || '' }
         ];
         const { error: sectionError } = await client.from('module_sections').insert(sectionRows);
         done();
@@ -1629,7 +1658,9 @@ const Cloud4 = (() => {
         setText('moduleCreateStatus', `✅ Modul erfolgreich erstellt (ID: ${inserted.id}).`);
         byId('newModuleTitle').value = '';
         byId('newModuleDescription').value = '';
-        byId('newModuleContent').value = '';
+        if (byId('newModuleIntro')) byId('newModuleIntro').innerHTML = '';
+        if (byId('newModuleMain')) byId('newModuleMain').innerHTML = '';
+        if (byId('newModuleConclusion')) byId('newModuleConclusion').innerHTML = '';
         byId('newModuleTopic').value = '';
         await renderCollection('modules', 'moduleGrid', 'moduleHighlights');
         const next = `${rootPath()}zusammenfassungen/?id=${encodeURIComponent(inserted.id)}`;
