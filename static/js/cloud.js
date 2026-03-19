@@ -9,6 +9,7 @@ const Cloud4 = (() => {
   let adminPage = 1;
   const adminPageSize = 10;
   let authSubscription = null;
+  const runtimeLogs = [];
 
   const rootPath = () => window.__SITE_ROOT__ || '/';
   const byId = (id) => document.getElementById(id);
@@ -31,6 +32,31 @@ const Cloud4 = (() => {
       btn.disabled = false;
     };
   };
+  const writeDebugLog = (line) => {
+    const box = byId('authDebugLog');
+    if (!box) return;
+    runtimeLogs.push(line);
+    const clipped = runtimeLogs.slice(-80);
+    box.textContent = clipped.join('\n');
+  };
+  const logEvent = (level, message, meta) => {
+    const ts = new Date().toISOString().slice(11, 19);
+    const payload = meta ? ` | ${toText(meta)}` : '';
+    const line = `[${ts}] [${level}] ${message}${payload}`;
+    writeDebugLog(line);
+    if (level === 'ERROR') console.error(line);
+    else if (level === 'WARN') console.warn(line);
+    else console.log(line);
+  };
+  const installRuntimeErrorHandlers = () => {
+    window.addEventListener('error', (event) => {
+      logEvent('ERROR', 'window.error', event.message || 'Unbekannter Fehler');
+    });
+    window.addEventListener('unhandledrejection', (event) => {
+      const reason = event.reason?.message || event.reason || 'Promise rejection';
+      logEvent('ERROR', 'unhandledrejection', toText(reason));
+    });
+  };
 
   function createSupabase() {
     if (supabaseClient) return supabaseClient;
@@ -38,6 +64,7 @@ const Cloud4 = (() => {
     const url = (window.__SUPABASE_URL__ || '').trim();
     const key = (window.__SUPABASE_ANON_KEY__ || '').trim();
     if (!url || !key) return null;
+    logEvent('INFO', 'Supabase Client wird initialisiert', `url=${url} keyLength=${key.length}`);
     supabaseClient = window.supabase.createClient(url, key, {
       auth: {
         persistSession: true,
@@ -56,6 +83,7 @@ const Cloud4 = (() => {
       if (client) return client;
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
+    logEvent('ERROR', 'Supabase Client konnte nicht initialisiert werden');
     return null;
   }
 
@@ -72,7 +100,8 @@ const Cloud4 = (() => {
   function bindAuthListener() {
     const client = createSupabase();
     if (!client || authSubscription) return;
-    const { data } = client.auth.onAuthStateChange(async () => {
+    const { data } = client.auth.onAuthStateChange(async (event, session) => {
+      logEvent('INFO', 'Auth State Change', `${event} user=${session?.user?.email || 'none'}`);
       await loadAuthState();
       await loadMetrics();
       await renderKonto();
@@ -1047,8 +1076,10 @@ const Cloud4 = (() => {
 
   async function setupAdminPage() {
     if (!byId('adminStatus')) return;
+    logEvent('INFO', 'setupAdminPage gestartet');
     const client = await ensureSupabaseClient();
     if (!client) {
+      logEvent('ERROR', 'setupAdminPage: Supabase Client fehlt');
       byId('adminStatus').textContent = 'Supabase-Verbindung fehlt. URL/Key oder Netzverbindung prüfen.';
       return;
     }
@@ -1057,7 +1088,9 @@ const Cloud4 = (() => {
     const createBtn = byId('createNoteBtn');
     const addWordBtn = byId('addSearchWordBtn');
     if (loginBtn) {
+      logEvent('INFO', 'Admin-Login-Button gefunden und Event gebunden');
       loginBtn.addEventListener('click', async () => {
+        logEvent('INFO', 'Admin-Login Klick erkannt');
         const done = setBusy(loginBtn, 'Lädt…');
         const email = byId('adminEmail')?.value || '';
         const password = byId('adminPassword')?.value || '';
@@ -1069,11 +1102,13 @@ const Cloud4 = (() => {
         const { error } = await client.auth.signInWithPassword({ email, password });
         done();
         if (error) {
+          logEvent('ERROR', 'Admin-Login fehlgeschlagen', normalizeSupabaseError(error));
           byId('adminStatus').textContent = `Login fehlgeschlagen: ${normalizeSupabaseError(error)}`;
           return;
         }
         await loadAuthState();
         const isAdmin = await checkAdmin();
+        logEvent('INFO', 'Admin-Login erfolgreich', `isAdmin=${isAdmin} email=${email.trim()}`);
         byId('adminStatus').textContent = isAdmin ? 'Admin-Login erfolgreich.' : 'Eingeloggt, aber keine Admin-Rolle.';
         if (isAdmin) {
           adminPage = 1;
@@ -1179,15 +1214,20 @@ const Cloud4 = (() => {
   }
 
   async function setupAuthPages() {
+    logEvent('INFO', 'setupAuthPages gestartet');
     const client = await ensureSupabaseClient();
     if (!client) {
+      logEvent('ERROR', 'setupAuthPages: Supabase Client fehlt');
       if (byId('loginStatus')) byId('loginStatus').textContent = 'Supabase-Verbindung fehlt. Bitte Konfiguration prüfen.';
       if (byId('registerStatus')) byId('registerStatus').textContent = 'Supabase-Verbindung fehlt. Bitte Konfiguration prüfen.';
       return;
     }
+    logEvent('INFO', 'setupAuthPages: Supabase Client verfügbar');
     const loginBtn = byId('loginSubmit');
     if (loginBtn) {
+      logEvent('INFO', 'Login-Button gefunden und Event gebunden');
       loginBtn.addEventListener('click', async () => {
+        logEvent('INFO', 'Login-Klick erkannt');
         const done = setBusy(loginBtn, 'Prüft…');
         const email = byId('loginEmail')?.value || '';
         const password = byId('loginPassword')?.value || '';
@@ -1196,21 +1236,28 @@ const Cloud4 = (() => {
           if (byId('loginStatus')) byId('loginStatus').textContent = 'Bitte E-Mail und Passwort eingeben.';
           return;
         }
+        logEvent('INFO', 'Login-Request wird gesendet', email.trim());
         const { error } = await client.auth.signInWithPassword({ email, password });
         if (error) {
           done();
+          logEvent('ERROR', 'Login fehlgeschlagen', normalizeSupabaseError(error));
           if (byId('loginStatus')) byId('loginStatus').textContent = `Fehler: ${normalizeSupabaseError(error)}`;
           return;
         }
         await loadAuthState();
         done();
+        logEvent('INFO', 'Login erfolgreich', currentUser?.email || email);
         if (byId('loginStatus')) byId('loginStatus').textContent = 'Anmeldung erfolgreich.';
         window.location.href = `${rootPath()}konto/`;
       });
+    } else {
+      logEvent('WARN', 'Login-Button nicht gefunden');
     }
     const registerBtn = byId('registerSubmit');
     if (registerBtn) {
+      logEvent('INFO', 'Register-Button gefunden und Event gebunden');
       registerBtn.addEventListener('click', async () => {
+        logEvent('INFO', 'Register-Klick erkannt');
         const done = setBusy(registerBtn, 'Erstellt…');
         const email = byId('registerEmail')?.value || '';
         const password = byId('registerPassword')?.value || '';
@@ -1227,10 +1274,12 @@ const Cloud4 = (() => {
         const { error } = await client.auth.signUp({ email, password });
         if (error) {
           done();
+          logEvent('ERROR', 'Registrierung fehlgeschlagen', normalizeSupabaseError(error));
           if (byId('registerStatus')) byId('registerStatus').textContent = `Fehler: ${normalizeSupabaseError(error)}`;
           return;
         }
         done();
+        logEvent('INFO', 'Registrierung erfolgreich ausgelöst', email.trim());
         if (byId('registerStatus')) byId('registerStatus').textContent = 'Registrierung erfolgreich. Bitte E-Mail bestätigen.';
       });
     }
@@ -1257,14 +1306,17 @@ const Cloud4 = (() => {
   }
 
   async function boot() {
+    installRuntimeErrorHandlers();
+    logEvent('INFO', 'Cloud4 boot gestartet');
     const safe = async (fn) => {
       try {
         await fn();
       } catch (error) {
-        console.error('Cloud4 init step failed:', error);
+        logEvent('ERROR', 'Cloud4 init step failed', error?.message || error);
       }
     };
     const client = await ensureSupabaseClient();
+    logEvent('INFO', 'Supabase Konfiguration', `configured=${isConfigured()} client=${Boolean(client)}`);
     if (!client && isConfigured()) {
       setText('loginStatus', 'Supabase Script konnte nicht geladen werden.');
       setText('registerStatus', 'Supabase Script konnte nicht geladen werden.');
