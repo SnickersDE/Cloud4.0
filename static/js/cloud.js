@@ -428,7 +428,7 @@ const Cloud4 = (() => {
     }
     const { data: moduleRow, error } = await client
       .from('modules')
-      .select('*')
+      .select('id,title,description,content,summary,topic,difficulty,user_id,created_at,updated_at')
       .eq('id', moduleId)
       .maybeSingle();
     if (error || !moduleRow) {
@@ -438,12 +438,12 @@ const Cloud4 = (() => {
     }
     const { data: sections } = await client
       .from('module_sections')
-      .select('*')
+      .select('id,module_id,type,title,content,created_at,updated_at')
       .eq('module_id', moduleId)
       .order('type', { ascending: true });
     const { data: pdfs } = await client
       .from('module_pdfs')
-      .select('*')
+      .select('id,module_id,user_id,name,url,created_at')
       .eq('module_id', moduleId)
       .order('created_at', { ascending: false });
     detailBox.style.display = '';
@@ -563,13 +563,13 @@ const Cloud4 = (() => {
     }
     const client = await ensureSupabaseClient();
     if (!client) return;
-    const { data: deck, error } = await client.from('decks').select('*').eq('id', deckId).maybeSingle();
+    const { data: deck, error } = await client.from('decks').select('id,title,theme,user_id,is_published,created_at,updated_at').eq('id', deckId).maybeSingle();
     if (error || !deck) {
       detailWrap.style.display = '';
       cardsGrid.innerHTML = `<div class="card"><div class="card-body"><div class="card-title">Deck nicht gefunden</div><div class="card-excerpt">${esc(normalizeSupabaseError(error))}</div></div></div>`;
       return;
     }
-    const { data: cards } = await client.from('flashcards').select('*').eq('deck_id', deckId).order('created_at', { ascending: true });
+    const { data: cards } = await client.from('flashcards').select('id,deck_id,front,back,status,created_at,updated_at').eq('deck_id', deckId).order('created_at', { ascending: true });
     detailWrap.style.display = '';
     setText('deckDetailTitle', deck.title || 'Deck');
     setText('deckDetailMeta', `${deck.theme || 'Thema offen'} · ${(cards || []).length} Karten`);
@@ -662,13 +662,13 @@ const Cloud4 = (() => {
     }
     const client = await ensureSupabaseClient();
     if (!client) return;
-    const { data: quiz, error } = await client.from('quizzes').select('*').eq('id', quizId).maybeSingle();
+    const { data: quiz, error } = await client.from('quizzes').select('id,title,description,difficulty,time_limit_seconds,user_id,is_published,created_at,updated_at').eq('id', quizId).maybeSingle();
     if (error || !quiz) {
       detailWrap.style.display = '';
       questionsGrid.innerHTML = `<div class="card"><div class="card-body"><div class="card-title">Quiz nicht gefunden</div><div class="card-excerpt">${esc(normalizeSupabaseError(error))}</div></div></div>`;
       return;
     }
-    const { data: questions } = await client.from('quiz_questions').select('*').eq('quiz_id', quizId).order('order', { ascending: true });
+    const { data: questions } = await client.from('quiz_questions').select('id,quiz_id,type,question,options,correct_answer,feedback,order,created_at,updated_at').eq('quiz_id', quizId).order('order', { ascending: true });
     detailWrap.style.display = '';
     setText('quizDetailTitle', quiz.title || 'Quiz');
     setText('quizDetailMeta', `${quiz.difficulty || 'Grundlagen'} · ${(questions || []).length} Fragen`);
@@ -980,7 +980,7 @@ const Cloud4 = (() => {
       if (byId('noteTeaser')) byId('noteTeaser').textContent = 'Keine gültige ID übergeben.';
       return;
     }
-    const { data: note } = await client.from('notes').select('*').eq('id', id).maybeSingle();
+    const { data: note } = await client.from('notes').select('id,title,teaser,category,body,image_path,created_at,updated_at,author_id').eq('id', id).maybeSingle();
     if (!note) {
       if (byId('noteTitle')) byId('noteTitle').textContent = 'MITSCHRIFT NICHT GEFUNDEN';
       if (byId('noteTeaser')) byId('noteTeaser').textContent = 'Dieser Eintrag existiert nicht.';
@@ -990,7 +990,7 @@ const Cloud4 = (() => {
     if (byId('noteTeaser')) byId('noteTeaser').textContent = toText(note.teaser);
     if (byId('noteMeta')) byId('noteMeta').textContent = `Kategorie: ${toText(note.category || 'Mitschrift')} · ${dateLabel(note.updated_at || note.created_at)}`;
     if (byId('noteImage')) byId('noteImage').innerHTML = note.image_path ? `<img src="${esc(note.image_path)}" alt="${esc(note.title)}">` : '';
-    const { data: sections } = await client.from('note_sections').select('*').eq('note_id', id).order('order_index', { ascending: true });
+    const { data: sections } = await client.from('note_sections').select('id,note_id,heading,content,order_index').eq('note_id', id).order('order_index', { ascending: true });
     const body = byId('noteContent');
     if (body) {
       body.innerHTML = '';
@@ -1017,7 +1017,7 @@ const Cloud4 = (() => {
         }
       }
     }
-    const { data: words } = await client.from('search_words').select('*').eq('note_id', id).order('word', { ascending: true });
+    const { data: words } = await client.from('search_words').select('id,note_id,word').eq('note_id', id).order('word', { ascending: true });
     const wordsBox = byId('noteSearchWords');
     if (wordsBox) {
       wordsBox.innerHTML = (words || []).map((row, idx) => `<div class="sidebar-item"><div class="sidebar-num">${String(idx + 1).padStart(2, '0')}</div><div class="sidebar-title">${esc(row.word)}</div></div>`).join('') || '<div class="sidebar-item"><div class="sidebar-title">Keine Suchwörter hinterlegt</div></div>';
