@@ -3,9 +3,6 @@ begin;
 create extension if not exists "uuid-ossp";
 create extension if not exists pg_trgm;
 
-drop trigger if exists notes_set_updated_at on public.notes;
-drop trigger if exists note_sections_set_updated_at on public.note_sections;
-
 drop function if exists public.search_notes(text, int);
 drop function if exists public.set_updated_at();
 drop function if exists public.is_admin();
