@@ -1,0 +1,21 @@
+{{ define "main" }}
+<article class="artikel-page">
+  <div class="artikel-header">
+    <div class="artikel-header-inner">
+      <div class="card-cat c-def" style="margin-bottom:16px;"><span class="cdot cd-def"></span>Mitschrift</div>
+      <h1 class="artikel-title" id="noteTitle">MITSCHRIFT</h1>
+      <p class="artikel-teaser" id="noteTeaser">Lädt Inhalt…</p>
+      <div class="artikel-meta" id="noteMeta"></div>
+    </div>
+  </div>
+  <div class="artikel-img shimmer" id="noteImage"></div>
+  <div class="artikel-body">
+    <div class="artikel-content" id="noteContent"></div>
+    <aside class="artikel-sidebar">
+      <div class="sidebar-hd"><span>Suchwörter</span></div>
+      <div id="noteSearchWords"></div>
+    </aside>
+  </div>
+  <div class="artikel-back"><a href="{{ .Site.Home.RelPermalink }}">&larr; Zurück zur Startseite</a></div>
+</article>
+{{ end }}

@@ -8,9 +8,9 @@
     <div class="card" onclick="window.location.href='{{ .RelPermalink }}'">
       <div class="card-img-ph shimmer">{{ if .Params.image }}<img src="{{ (strings.TrimPrefix "/" .Params.image) | relURL }}" alt="{{ .Title }}">{{ end }}</div>
       <div class="card-body">
-        <div class="card-cat {{ .Params.cat_class | default "c-bl" }}">
-          <span class="cdot {{ .Params.cd_class | default "cd-bl" }}"></span>
-          {{ .Params.liga | default "Bundesliga" }}
+        <div class="card-cat {{ .Params.cat_class | default "c-def" }}">
+          <span class="cdot {{ .Params.cd_class | default "cd-def" }}"></span>
+          {{ .Params.category | default "Inhalt" }}
         </div>
         <div class="card-title">{{ .Title | upper }}</div>
         <div class="card-excerpt">{{ .Params.teaser | default .Summary }}</div>

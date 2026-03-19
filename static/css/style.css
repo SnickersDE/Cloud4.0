@@ -21,6 +21,17 @@ body {
   line-height:1.5;
   transition:background .3s,color .3s;
 }
+a {
+  color:inherit;
+  text-decoration:none;
+}
+a:visited {
+  color:inherit;
+  text-decoration:none;
+}
+a:hover {
+  text-decoration:none;
+}
 
 /* ── PROGRESS BAR ── */
 #progress-bar { position:fixed; top:0; left:0; height:3px; width:0%; background:var(--red); z-index:9999; transition:width .1s linear; }

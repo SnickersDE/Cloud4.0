@@ -1,19 +1,18 @@
-baseURL = "https://SnickersDE.github.io/Fussballgenie.de/"
+baseURL = "https://SnickersDE.github.io/Cloud4.0/"
 languageCode = "de-DE"
-title = "FussballGenie.de"
+title = "Cloud4.0"
 theme = ""
 paginate = 12
 
 [params]
-  description = "Die schnellsten Bundesliga News — 1. & 2. Bundesliga"
-  author = "Redaktion ZDSWD"
+  description = "Cloud4.0 Lernplattform mit Mitschriften, Karteikarten, Quiz und Spiele."
+  author = "Cloud4.0 Redaktion"
+  supabaseUrl = ""
+  supabaseAnonKey = ""
 
 [taxonomies]
   category = "categories"
   tag = "tags"
-
-[permalinks]
-  artikel = "/artikel/:slug/"
 
 [outputs]
   home = ["HTML", "RSS", "JSON"]

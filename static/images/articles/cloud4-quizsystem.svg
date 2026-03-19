@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="g3" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#101010"/>
+      <stop offset="100%" stop-color="#261012"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g3)"/>
+  <rect x="90" y="100" width="1020" height="430" rx="18" fill="#171717" stroke="#2c2c2c"/>
+  <text x="140" y="190" fill="#d0021b" font-size="30" font-family="Arial" font-weight="700">QUIZ</text>
+  <text x="140" y="250" fill="#f0f0ee" font-size="58" font-family="Arial" font-weight="700">PRÜFUNGSMODUS</text>
+  <text x="140" y="305" fill="#9a9a9a" font-size="24" font-family="Arial">Schwierigkeit · Zeitlimit · Feedback</text>
+  <rect x="140" y="350" width="320" height="28" rx="8" fill="#2d2d2d"/>
+  <rect x="140" y="392" width="280" height="28" rx="8" fill="#2d2d2d"/>
+  <rect x="140" y="434" width="360" height="28" rx="8" fill="#2d2d2d"/>
+  <rect x="700" y="330" width="260" height="140" rx="14" fill="#1e1e1e" stroke="#d0021b"/>
+  <text x="735" y="400" fill="#f0f0ee" font-size="44" font-family="Arial" font-weight="700">82%</text>
+</svg>

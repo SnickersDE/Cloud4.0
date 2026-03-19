@@ -35,6 +35,9 @@ jobs:
         run: python3 scripts/validate_content.py
 
       - name: Build with Hugo
+        env:
+          HUGO_SUPABASE_URL: ${{ secrets.HUGO_SUPABASE_URL }}
+          HUGO_SUPABASE_ANON_KEY: ${{ secrets.HUGO_SUPABASE_ANON_KEY }}
         run: hugo --minify --gc
 
       - name: Upload artifact

@@ -2,12 +2,12 @@
   <div class="header-top">
     <div>
       <a class="logo" href="{{ .Site.Home.RelPermalink }}" onclick="window.location.href='{{ .Site.Home.RelPermalink }}'; return false;">
-        FUSSBALLGENIE<span class="accent">.DE</span>
+        CLOUD<span class="accent">4.0</span>
       </a>
     </div>
     <div class="header-right">
       <div class="search-wrap">
-        <input class="search-input" id="searchInput" type="text" placeholder="Suche..."/>
+        <input class="search-input" id="searchInput" type="text" placeholder="Suche Mitschriften, Begriffe, Module..."/>
         <button class="search-btn" onclick="toggleSearch()">&#128269; Suche</button>
       </div>
       <div class="search-results" id="searchResults"></div>
@@ -27,38 +27,43 @@
           </a>
         </div>
         <div class="nav-item">
-          <a class="nav-btn{{ if eq .RelPermalink "/tabelle/" }} active{{ end }}" href="{{ "tabelle/" | relURL }}">
-            Tabelle
+          <a class="nav-btn{{ if eq .RelPermalink "/spiele/" }} active{{ end }}" href="{{ "spiele/" | relURL }}">
+            Spiele
           </a>
         </div>
         <div class="nav-item">
-          <a class="nav-btn{{ if eq .RelPermalink "/champions-league/" }} active{{ end }}" href="{{ "champions-league/" | relURL }}">
-            Champions League
+          <a class="nav-btn{{ if eq .RelPermalink "/zusammenfassungen/" }} active{{ end }}" href="{{ "zusammenfassungen/" | relURL }}">
+            Zusammenfassungen
           </a>
         </div>
         <div class="nav-item">
-          <a class="nav-btn{{ if eq .RelPermalink "/1-bundesliga/" }} active{{ end }}" href="{{ "1-bundesliga/" | relURL }}">
-            1. Bundesliga
+          <a class="nav-btn{{ if eq .RelPermalink "/karteikarten/" }} active{{ end }}" href="{{ "karteikarten/" | relURL }}">
+            Karteikarten
           </a>
         </div>
         <div class="nav-item">
-          <a class="nav-btn{{ if eq .RelPermalink "/2-bundesliga/" }} active{{ end }}" href="{{ "2-bundesliga/" | relURL }}">
-            2. Bundesliga
+          <a class="nav-btn{{ if eq .RelPermalink "/quiz/" }} active{{ end }}" href="{{ "quiz/" | relURL }}">
+            Quiz
           </a>
         </div>
         <div class="nav-item">
-          <a class="nav-btn{{ if eq .RelPermalink "/historisches/" }} active{{ end }}" href="{{ "historisches/" | relURL }}">
-            Historisches
+          <a class="nav-btn{{ if eq .RelPermalink "/ai-mode/" }} active{{ end }}" href="{{ "ai-mode/" | relURL }}">
+            AI Mode
           </a>
         </div>
         <div class="nav-item">
-          <a class="nav-btn{{ if eq .RelPermalink "/unterstuetzen/" }} active{{ end }}" href="{{ "unterstuetzen/" | relURL }}">
-            Unterstützen
+          <a class="nav-btn{{ if eq .RelPermalink "/vernetzen/" }} active{{ end }}" href="{{ "vernetzen/" | relURL }}">
+            Vernetzen
           </a>
         </div>
         <div class="nav-item">
-          <a class="nav-btn{{ if eq .RelPermalink "/wir/" }} active{{ end }}" href="{{ "wir/" | relURL }}">
-            Wir
+          <a class="nav-btn{{ if eq .RelPermalink "/konto/" }} active{{ end }}" href="{{ "konto/" | relURL }}">
+            Mein Konto
+          </a>
+        </div>
+        <div class="nav-item">
+          <a class="nav-btn{{ if eq .RelPermalink "/admin/" }} active{{ end }}" href="{{ "admin/" | relURL }}">
+            Admin
           </a>
         </div>
 
@@ -71,12 +76,13 @@
 
   <div class="mobile-menu" id="mobileMenu">
     <a href="{{ .Site.Home.RelPermalink }}">Start</a>
-    <a href="{{ "tabelle/" | relURL }}">Tabelle</a>
-    <a href="{{ "champions-league/" | relURL }}">Champions League</a>
-    <a href="{{ "1-bundesliga/" | relURL }}">1. Bundesliga</a>
-    <a href="{{ "2-bundesliga/" | relURL }}">2. Bundesliga</a>
-    <a href="{{ "historisches/" | relURL }}">Historisches</a>
-    <a href="{{ "unterstuetzen/" | relURL }}">Unterstützen</a>
-    <a href="{{ "wir/" | relURL }}">Wir</a>
+    <a href="{{ "spiele/" | relURL }}">Spiele</a>
+    <a href="{{ "zusammenfassungen/" | relURL }}">Zusammenfassungen</a>
+    <a href="{{ "karteikarten/" | relURL }}">Karteikarten</a>
+    <a href="{{ "quiz/" | relURL }}">Quiz</a>
+    <a href="{{ "ai-mode/" | relURL }}">AI Mode</a>
+    <a href="{{ "vernetzen/" | relURL }}">Vernetzen</a>
+    <a href="{{ "konto/" | relURL }}">Mein Konto</a>
+    <a href="{{ "admin/" | relURL }}">Admin</a>
   </div>
 </header>

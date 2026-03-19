@@ -1,127 +1,55 @@
 {{ define "main" }}
-
-{{ $allArticles := where .Site.RegularPages "Section" "artikel" }}
-{{ $allArticles = sort $allArticles "Date" "desc" }}
-
-<!-- ══════════════════════════════════════
-     HERO
-══════════════════════════════════════ -->
-<div class="hero">
-  {{ $hero := index $allArticles 0 }}
-  <div class="hero-main filterable" onclick="window.location.href='{{ $hero.RelPermalink }}'" data-league="{{ $hero.Params.liga }}" data-title="{{ $hero.Params.liga | lower }} {{ $hero.Title | lower }}">
-    <div class="hero-badge">Breaking</div>
-    <div class="hero-pic shimmer">
-      {{ if $hero.Params.image }}
-        <img src="{{ (strings.TrimPrefix "/" $hero.Params.image) | relURL }}" alt="{{ $hero.Title }}">
-      {{ end }}
-    </div>
+<div class="hero" id="homeHero">
+  <div class="hero-main filterable" id="heroMainArticle">
+    <div class="hero-badge">Neu</div>
+    <div class="hero-pic shimmer" id="heroMainImage"></div>
     <div class="hero-content">
-      <div class="hero-category">{{ $hero.Params.liga }}</div>
-      <div class="hero-title">{{ $hero.Title | upper }}</div>
-      <div class="hero-sub">{{ $hero.Params.teaser }}</div>
-      <div class="hero-meta">Von {{ $hero.Params.author | default "Redaktion" }} · {{ $hero.Date.Format "02.01.2006 · 15:04" }} · {{ $hero.Params.lesezeit | default "3" }} Min.</div>
+      <div class="hero-category" id="heroMainCategory">Mitschrift</div>
+      <div class="hero-title" id="heroMainTitle">Cloud4.0 Lernplattform</div>
+      <div class="hero-sub" id="heroMainTeaser">Lädt Inhalte aus Supabase…</div>
+      <div class="hero-meta" id="heroMainMeta"></div>
     </div>
   </div>
-  <div class="hero-sidebar">
-    {{ range first 5 (after 1 $allArticles) }}
-      <div class="hero-side-item filterable" onclick="window.location.href='{{ .RelPermalink }}'" data-league="{{ .Params.liga }}" data-title="{{ .Params.liga | lower }} {{ .Title | lower }}">
-        <div class="side-thumb-ph shimmer">
-          {{ if .Params.image }}<img src="{{ (strings.TrimPrefix "/" .Params.image) | relURL }}" alt="{{ .Title }}">{{ end }}
-        </div>
-        <div>
-          <div class="side-cat">{{ .Params.liga }}</div>
-          <div class="side-title">{{ .Title }}</div>
-          <div class="side-date">{{ .Date.Format "02.01. · 15:04" }} · {{ .Params.lesezeit | default "3" }} Min.</div>
-        </div>
-      </div>
-    {{ end }}
-  </div>
+  <div class="hero-sidebar" id="heroSidebar"></div>
 </div>
 
-<!-- ══════════════════════════════════════
-     NEWS GRID
-══════════════════════════════════════ -->
-<div class="container"><div class="section-label">Aktuelle Meldungen</div></div>
+<div class="container"><div class="section-label">Module im Überblick</div></div>
+<div class="strip" id="cloudModuleStrip">
+  <a class="strip-card" href="{{ "spiele/" | relURL }}"><div class="card-cat c-tr"><span class="cdot cd-tr"></span>Spiele</div><div class="card-title">Typing Arena, Synapse und Realm Builder</div><div class="card-excerpt">Interaktive Lernspiele mit Leaderboard-Anbindung aus Supabase.</div></a>
+  <a class="strip-card" href="{{ "zusammenfassungen/" | relURL }}"><div class="card-cat c-bl"><span class="cdot cd-bl"></span>Zusammenfassungen</div><div class="card-title">Strukturierte Mitschriften und Module</div><div class="card-excerpt">Schwerpunkte, Begriffe, Praxisbeispiele, Fragen und Fazit.</div></a>
+  <a class="strip-card" href="{{ "karteikarten/" | relURL }}"><div class="card-cat c-2bl"><span class="cdot cd-2bl"></span>Karteikarten</div><div class="card-title">Decks mit Lernfortschritt</div><div class="card-excerpt">Wiederholungen, Status-Tracking und thematische Deckstruktur.</div></a>
+  <a class="strip-card" href="{{ "quiz/" | relURL }}"><div class="card-cat c-me"><span class="cdot cd-me"></span>Quiz</div><div class="card-title">Prüfungsmodus mit Schwierigkeitsstufen</div><div class="card-excerpt">Grundlagen, Vertiefung und Prüfungsvorbereitung.</div></a>
+</div>
+
+<div class="container"><div class="section-label">Aktuelle Mitschriften</div></div>
 <div class="main-grid" id="articleGrid">
-
-  {{ $paginator := .Paginate $allArticles }}
-  {{ range $paginator.Pages }}
-    {{ if eq .Section "artikel" }}
-    <div class="card filterable"
-         onclick="window.location.href='{{ .RelPermalink }}'"
-         data-league="{{ .Params.liga }}"
-         data-title="{{ .Params.liga | lower }} {{ .Title | lower }}">
-      <button class="card-share" onclick="copyLink(event)">Link kopieren</button>
-      <div class="card-img-ph shimmer">
-        {{ if .Params.image }}<img src="{{ (strings.TrimPrefix "/" .Params.image) | relURL }}" alt="{{ .Title }}">{{ end }}
-      </div>
-      <div class="card-body">
-        <div class="card-cat {{ .Params.cat_class | default "c-bl" }}">
-          <span class="cdot {{ .Params.cd_class | default "cd-bl" }}"></span>
-          {{ .Params.liga }}
-        </div>
-        <div class="card-title"><a href="{{ .RelPermalink }}">{{ .Title | upper }}</a>{{ if .Params.neu }}<span class="badge-new">Neu</span>{{ end }}</div>
-        <div class="card-excerpt">{{ .Params.teaser }}</div>
-        <div class="card-foot">
-          <div class="card-meta">{{ .Date.Format "02.01." }} · {{ .Date.Format "15:04" }}</div>
-          <div class="read-time">{{ .Params.lesezeit | default "3" }} Min.</div>
-        </div>
-      </div>
-    </div>
-    {{ end }}
-  {{ end }}
-
-  <!-- KI-Artikel Marker für den Python-Redakteur -->
-  <!-- ##KI-ARTIKEL-START## -->
-  <!-- ##KI-ARTIKEL-END## -->
-
-  <!-- Trending Sidebar -->
   <div class="sidebar-stack">
     <div class="sidebar-hd">
-      <span>Trending</span>
+      <span>Cloud4.0 Bereiche</span>
       <span style="font-size:9px;color:#555;letter-spacing:2px;">LIVE</span>
     </div>
-    <div class="sidebar-item"><div class="sidebar-num">01</div><div class="sidebar-title">Bayern – BVB: Die Noten</div><div class="sidebar-tag">1. Bundesliga</div><div class="trend-count"><span>12.4k</span><div class="trend-bar" style="width:88px;"></div></div></div>
-    <div class="sidebar-item"><div class="sidebar-num">02</div><div class="sidebar-title">Wirtz: Alle Klubs im Rennen</div><div class="sidebar-tag">Transfer</div><div class="trend-count"><span>9.8k</span><div class="trend-bar" style="width:72px;"></div></div></div>
-    <div class="sidebar-item"><div class="sidebar-num">03</div><div class="sidebar-title">1. Bundesliga Tabelle — 26. Spieltag</div><div class="sidebar-tag">Tabelle</div><div class="trend-count"><span>7.2k</span><div class="trend-bar" style="width:56px;"></div></div></div>
-    <div class="sidebar-item"><div class="sidebar-num">04</div><div class="sidebar-title">2. Bundesliga Tabelle — Aufstieg</div><div class="sidebar-tag">2. Bundesliga</div><div class="trend-count"><span>5.1k</span><div class="trend-bar" style="width:40px;"></div></div></div>
-    <div class="sidebar-item"><div class="sidebar-num">05</div><div class="sidebar-title">Nagelsmann — DFB-Kader Analyse</div><div class="sidebar-tag">Nationalteam</div><div class="trend-count"><span>3.9k</span><div class="trend-bar" style="width:30px;"></div></div></div>
+    <a class="sidebar-item" href="{{ "ai-mode/" | relURL }}"><div class="sidebar-num">01</div><div class="sidebar-title">AI Mode Pipeline</div><div class="sidebar-tag">Upload · Chunking · Summary</div></a>
+    <a class="sidebar-item" href="{{ "vernetzen/" | relURL }}"><div class="sidebar-num">02</div><div class="sidebar-title">Vernetzen</div><div class="sidebar-tag">Freunde und Gruppen-Workflows</div></a>
+    <a class="sidebar-item" href="{{ "konto/" | relURL }}"><div class="sidebar-num">03</div><div class="sidebar-title">Mein Konto</div><div class="sidebar-tag">Profil, Statistik, Favoriten</div></a>
+    <a class="sidebar-item" href="{{ "admin/" | relURL }}"><div class="sidebar-num">04</div><div class="sidebar-title">Admin Bereich</div><div class="sidebar-tag">Artikelpflege und Suchwörter</div></a>
+    <a class="sidebar-item" href="{{ "mitschrift/" | relURL }}"><div class="sidebar-num">05</div><div class="sidebar-title">Mitschrift-Detail</div><div class="sidebar-tag">Abschnitte und Bearbeitung</div></a>
   </div>
-
-  <!-- Newsletter Inline -->
-  <div class="nl-inline">
-    <div>
-      <div class="nl-inline-title">Kein Spiel verpassen — <span>kostenloser Newsletter</span></div>
-      <div class="nl-inline-sub">1. &amp; 2. Bundesliga täglich · direkt in dein Postfach</div>
-    </div>
-    <div class="nl-form">
-      <input class="nl-input" type="email" placeholder="deine@email.de"/>
-      <button class="nl-btn">Anmelden</button>
-    </div>
-  </div>
-
-</div><!-- /main-grid -->
-
-<div class="container" style="padding-top:18px;padding-bottom:28px;">
-  {{ if $paginator.HasPrev }}<a class="soc-btn" href="{{ $paginator.Prev.URL }}">Neuere Artikel</a>{{ end }}
-  {{ if $paginator.HasNext }}<a class="soc-btn" href="{{ $paginator.Next.URL }}">Ältere Artikel</a>{{ end }}
 </div>
 
-<!-- Strip -->
-<div class="strip">
-  {{ range first 4 (after 6 $allArticles) }}
-    <div class="strip-card filterable" onclick="window.location.href='{{ .RelPermalink }}'" data-league="{{ .Params.liga }}" data-title="{{ .Params.liga | lower }} {{ .Title | lower }}">
-      <div class="card-cat {{ .Params.cat_class | default "c-def" }}"><span class="cdot {{ .Params.cd_class | default "cd-def" }}"></span>{{ .Params.liga }}</div>
-      <div class="card-title">{{ .Title }}</div>
-      <div class="card-excerpt">{{ .Params.teaser }}</div>
-      <div class="card-foot"><div class="card-meta">{{ .Date.Format "02.01. · 15:04" }}</div><div class="read-time">{{ .Params.lesezeit | default "3" }} Min.</div></div>
-    </div>
-  {{ end }}
+<div class="nl-inline">
+  <div>
+    <div class="nl-inline-title">Cloud4.0 Updates — <span>Artikel und Lernmaterial</span></div>
+    <div class="nl-inline-sub">Mitschriften, Quiz und Karteikarten zentral auf einer Oberfläche</div>
+  </div>
+  <div class="nl-form">
+    <input class="nl-input" id="newsletterMail" type="email" placeholder="deine@email.de"/>
+    <button class="nl-btn" type="button" onclick="window.alert('Danke! Das Formular wird im nächsten Schritt an Supabase angebunden.')">Anmelden</button>
+  </div>
 </div>
 
 <div id="noResults">
-  <div class="no-results-title">Keine Artikel gefunden</div>
-  <div class="no-results-sub">Für diesen Filter sind aktuell keine Beiträge vorhanden.</div>
+  <div class="no-results-title">Keine Mitschriften gefunden</div>
+  <div class="no-results-sub">Für diese Suche sind aktuell keine Inhalte vorhanden.</div>
   <button onclick="clearFilter()">Filter aufheben</button>
 </div>
 

@@ -1,4 +1,4 @@
 ---
 title: "Start"
-description: "Die schnellsten Bundesliga News — 1. & 2. Bundesliga täglich aktuell."
+description: "Cloud4.0 Startseite mit Mitschriften, Lernmodulen und Supabase-Suche."
 ---

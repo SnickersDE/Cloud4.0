@@ -1,0 +1,47 @@
+{{ define "main" }}
+<div class="wir-hero">
+  <div class="page-title-inline">ADMIN</div>
+  <div class="wir-sub">Nur Admins dürfen Mitschriften und Suchwörter bearbeiten.</div>
+</div>
+<div class="container"><div class="section-label">Admin Anmeldung</div></div>
+<div class="support-wrap">
+  <div>
+    <div class="wb-title">Supabase Login</div>
+    <p class="author-text">Melde dich mit deinem Konto an, um Bearbeitungsfunktionen freizuschalten.</p>
+    <div class="nl-form" style="margin-top:14px;max-width:520px;">
+      <input class="nl-input" id="adminEmail" type="email" placeholder="E-Mail"/>
+      <input class="nl-input" id="adminPassword" type="password" placeholder="Passwort" style="border-left:1px solid #333;border-right:none;"/>
+      <button class="nl-btn" id="adminLoginBtn" type="button">Einloggen</button>
+    </div>
+    <button class="soc-btn" id="adminLogoutBtn" type="button" style="margin-top:12px;">Ausloggen</button>
+    <p class="author-text" id="adminStatus"></p>
+  </div>
+  <div class="support-qr">ADMIN<br/>PANEL</div>
+</div>
+<div class="container"><div class="section-label">Mitschriften bearbeiten</div></div>
+<div class="main-grid" id="adminNotesGrid"></div>
+<div class="container" id="adminNotesPager" style="padding-top:14px;padding-bottom:10px;"></div>
+<div class="container"><div class="section-label">Neue Mitschrift</div></div>
+<div class="support-wrap">
+  <div>
+    <div class="nl-form" style="display:block;">
+      <input class="nl-input" id="newNoteTitle" type="text" placeholder="Titel" style="width:100%;border-right:1px solid #333;margin-bottom:8px;"/>
+      <input class="nl-input" id="newNoteTeaser" type="text" placeholder="Teaser" style="width:100%;border-right:1px solid #333;margin-bottom:8px;"/>
+      <input class="nl-input" id="newNoteImage" type="text" placeholder="/images/articles/datei.svg" style="width:100%;border-right:1px solid #333;margin-bottom:8px;"/>
+      <textarea class="nl-input" id="newNoteBody" placeholder="Inhalt" style="width:100%;height:140px;border-right:1px solid #333;margin-bottom:8px;"></textarea>
+      <button class="nl-btn" id="createNoteBtn" type="button">Mitschrift erstellen</button>
+    </div>
+  </div>
+  <div class="support-qr">CREATE</div>
+</div>
+<div class="container"><div class="section-label">Suchwörter</div></div>
+<div class="support-wrap">
+  <div>
+    <div class="nl-form">
+      <input class="nl-input" id="newSearchWord" type="text" placeholder="Suchwort"/>
+      <button class="nl-btn" id="addSearchWordBtn" type="button">Hinzufügen</button>
+    </div>
+  </div>
+  <div class="support-qr" id="adminSearchWordsList">Keine Suchwörter geladen</div>
+</div>
+{{ end }}
